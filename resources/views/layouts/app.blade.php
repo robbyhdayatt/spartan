@@ -144,6 +144,20 @@
                         </li>
                     </ul>
                 </li>
+                {{-- ... setelah menu master data ... --}}
+                <li class="nav-header">TRANSAKSI</li>
+                <li class="nav-item">
+                    <a href="{{ route('pembelian.index') }}" class="nav-link {{ request()->is('transaksi/pembelian*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>Pembelian (PO)</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->is('transaksi/penerimaan*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-box-open"></i>
+                        <p>Penerimaan Barang</p>
+                    </a>
+                </li>
             </ul>
         </nav>
     </div>

@@ -9,6 +9,8 @@ use App\Http\Controllers\Master\GudangController;
 use App\Http\Controllers\Master\KaryawanController;
 use App\Http\Controllers\Master\KonsumenController;
 use App\Http\Controllers\Master\PartController;
+use App\Http\Controllers\Transaksi\PembelianController;
+use App\Http\Controllers\Transaksi\PenerimaanController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -41,4 +43,19 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('konsumen', KonsumenController::class);
     Route::resource('parts', PartController::class);
     // Tambahkan resource untuk master data lain di sini nanti
+
+    // TRANSAKSI
+    Route::prefix('transaksi')->group(function() {
+        // Pembelian
+        Route::get('pembelian', [PembelianController::class, 'index'])->name('pembelian.index');
+        Route::post('pembelian', [PembelianController::class, 'store'])->name('pembelian.store');
+        Route::get('pembelian/{pembelian}/details', [PembelianController::class, 'getDetailsJson'])->name('pembelian.details.json');
+
+        // Penerimaan
+        Route::get('penerimaan', [PenerimaanController::class, 'index'])->name('penerimaan.index');
+        Route::get('penerimaan/create', [PenerimaanController::class, 'create'])->name('penerimaan.create');
+        Route::get('penerimaan/{penerimaan}/details', [PenerimaanController::class, 'getDetailsJson'])->name('penerimaan.details.json');
+        Route::post('penerimaan', [PenerimaanController::class, 'store'])->name('penerimaan.store');
+
+    });
 });
