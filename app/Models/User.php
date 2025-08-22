@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use Notifiable;
+
+    protected $table = 'user';
+    protected $primaryKey = 'id_user';
 
     /**
      * The attributes that are mass assignable.
@@ -17,7 +18,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'username', 'email', 'password_hash', 'id_karyawan',
     ];
 
     /**
@@ -30,11 +31,28 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
+     * Definisi relasi ke tabel karyawan.
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    public function karyawan()
+    {
+        return $this->belongsTo(Karyawan::class, 'id_karyawan');
+    }
+
+    /**
+     * Override default 'name' attribute to get name from karyawan table.
+     */
+    public function getNameAttribute()
+    {
+        // Jika relasi karyawan ada, ambil nama_karyawan. Jika tidak, ambil username.
+        return $this->karyawan ? $this->karyawan->nama_karyawan : $this->username;
+    }
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
 }
