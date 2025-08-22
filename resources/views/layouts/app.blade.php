@@ -70,10 +70,79 @@
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-th"></i>
+                    <a href="{{ route('home') }}" class="nav-link {{ request()->is('home*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>Dashboard</p>
                     </a>
+                </li>
+
+                <li class="nav-header">MASTER DATA</li>
+
+                @php
+                    $masterRoutes = [
+                        'suppliers*', 'brands*', 'categories*', 'jabatan*',
+                        'gudang*', 'karyawan*', 'konsumen*', 'parts*'
+                    ];
+                @endphp
+
+                <li class="nav-item {{ request()->is($masterRoutes) ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ request()->is($masterRoutes) ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-database"></i>
+                        <p>
+                            Master
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{{ route('suppliers.index') }}" class="nav-link {{ request()->is('suppliers*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Supplier</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('brands.index') }}" class="nav-link {{ request()->is('brands*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Brand</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('categories.index') }}" class="nav-link {{ request()->is('categories*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Kategori</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('jabatan.index') }}" class="nav-link {{ request()->is('jabatan*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Jabatan</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('gudang.index') }}" class="nav-link {{ request()->is('gudang*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Gudang</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('karyawan.index') }}" class="nav-link {{ request()->is('karyawan*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Karyawan</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('konsumen.index') }}" class="nav-link {{ request()->is('konsumen*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Konsumen</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('parts.index') }}" class="nav-link {{ request()->is('parts*') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Part</p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </nav>
@@ -93,5 +162,6 @@
 <script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
 <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
+@stack('scripts')
 </body>
 </html>
