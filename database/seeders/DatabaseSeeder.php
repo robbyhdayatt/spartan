@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             SalesSeeder::class,
+            ApprovalLevelSeeder::class,
         ]);
 
         // Setelah Karyawan ada, kita update PIC Gudang
