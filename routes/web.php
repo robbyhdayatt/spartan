@@ -11,6 +11,9 @@ use App\Http\Controllers\Master\KonsumenController;
 use App\Http\Controllers\Master\PartController;
 use App\Http\Controllers\Transaksi\PembelianController;
 use App\Http\Controllers\Transaksi\PenerimaanController;
+use App\Http\Controllers\Transaksi\PenjualanController;
+use App\Http\Controllers\Transaksi\StockAdjustmentController;
+use App\Http\Controllers\Transaksi\ReturController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -58,6 +61,21 @@ Route::middleware(['auth'])->group(function () {
         Route::post('penerimaan', [PenerimaanController::class, 'store'])->name('penerimaan.store');
         Route::get('penerimaan/{penerimaan}/qc', [PenerimaanController::class, 'showQcForm'])->name('penerimaan.qc');
         Route::post('penerimaan/{penerimaan}/qc', [PenerimaanController::class, 'processQc'])->name('penerimaan.processQc');
+
+        // Penjualan
+        Route::get('penjualan', [PenjualanController::class, 'index'])->name('penjualan.index');
+        Route::post('penjualan', [PenjualanController::class, 'store'])->name('penjualan.store');
+        Route::get('penjualan/{penjualan}/details', [PenjualanController::class, 'getDetailsJson'])->name('penjualan.details.json');
+
+        // Stock Adjustment
+        Route::get('adjustment', [StockAdjustmentController::class, 'index'])->name('adjustment.index');
+        Route::post('adjustment', [StockAdjustmentController::class, 'store'])->name('adjustment.store');
+        Route::get('get-stock-sistem', [StockAdjustmentController::class, 'getStockSistem'])->name('adjustment.get-stock');
+
+        // Retur
+        Route::get('retur', [ReturController::class, 'index'])->name('retur.index');
+        Route::post('retur', [ReturController::class, 'store'])->name('retur.store');
+        Route::get('get-items-for-return', [ReturController::class, 'getItemsForReturn'])->name('retur.get-items');
 
     });
 });
