@@ -10,6 +10,8 @@ use App\Models\Transaksi\Penerimaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\Master\StokLokasi;
+use App\Models\Transaksi\KartuStok;
 
 class PenerimaanController extends Controller
 {
@@ -74,6 +76,99 @@ class PenerimaanController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+        }
+    }
+    public function showQcForm(Penerimaan $penerimaan)
+    {
+        // Hanya proses dokumen yang statusnya 'checking'
+        if ($penerimaan->status_penerimaan !== 'checking') {
+            return redirect()->route('penerimaan.index')->with('error', 'Dokumen penerimaan ini sudah diproses atau dibatalkan.');
+        }
+
+        $penerimaan->load('details.part');
+        return view('transaksi.penerimaan.qc', compact('penerimaan'));
+    }
+
+    public function processQc(Request $request, Penerimaan $penerimaan)
+    {
+        // Validasi sederhana
+        $request->validate([
+            'details' => 'required|array',
+            'details.*.qty_approved' => 'required|integer|min:0',
+            'details.*.qty_rejected' => 'required|integer|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $totalApproved = 0;
+            $totalRejected = 0;
+
+            foreach ($request->details as $id_detail => $data) {
+                $detail = $penerimaan->details()->findOrFail($id_detail);
+                
+                // Pastikan qty approved + rejected tidak melebihi qty diterima
+                if (($data['qty_approved'] + $data['qty_rejected']) > $detail->qty_diterima) {
+                    throw new \Exception("Jumlah approved & rejected untuk part {$detail->part->nama_part} melebihi jumlah diterima.");
+                }
+
+                // 1. Update Detail Penerimaan
+                $detail->qty_approved = $data['qty_approved'];
+                $detail->qty_rejected = $data['qty_rejected'];
+                $detail->qc_notes = $data['qc_notes'];
+                $detail->status_qc = 'passed'; // Asumsi sudah selesai
+                $detail->save();
+
+                $totalApproved += $detail->qty_approved;
+                $totalRejected += $detail->qty_rejected;
+
+                // 2. Update Stok & Kartu Stok
+                if ($detail->qty_approved > 0) {
+                    // Update atau buat entri di Stok Lokasi
+                    $stokLokasi = StokLokasi::firstOrNew([
+                        'id_part' => $detail->id_part,
+                        'id_gudang' => $penerimaan->id_gudang_tujuan
+                    ]);
+                    $stokLokasi->quantity += $detail->qty_approved;
+                    $stokLokasi->save();
+
+                    // Catat di Kartu Stok
+                    KartuStok::create([
+                        'id_part' => $detail->id_part,
+                        'id_gudang' => $penerimaan->id_gudang_tujuan,
+                        'jenis_transaksi' => 'qc_approved',
+                        'referensi_dokumen' => $penerimaan->nomor_penerimaan,
+                        'referensi_id' => $penerimaan->id_penerimaan,
+                        'masuk' => $detail->qty_approved,
+                        'kondisi_stok' => 'baik',
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+
+                if ($detail->qty_rejected > 0) {
+                    // Update atau buat entri di Stok Lokasi (stok rusak)
+                    $stokLokasi = StokLokasi::firstOrNew([
+                        'id_part' => $detail->id_part,
+                        'id_gudang' => $penerimaan->id_gudang_tujuan
+                    ]);
+                    $stokLokasi->quantity_rusak += $detail->qty_rejected;
+                    $stokLokasi->save();
+                }
+            }
+
+            // 3. Update Header Penerimaan
+            $penerimaan->total_qty_approved = $totalApproved;
+            $penerimaan->total_qty_rejected = $totalRejected;
+            $penerimaan->status_penerimaan = 'completed';
+            $penerimaan->qc_by = auth()->user()->id_karyawan;
+            $penerimaan->qc_date = now();
+            $penerimaan->save();
+
+            DB::commit();
+            return redirect()->route('penerimaan.index')->with('success', 'Proses QC & Finalisasi Penerimaan berhasil.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
     public function getDetailsJson(Penerimaan $penerimaan)

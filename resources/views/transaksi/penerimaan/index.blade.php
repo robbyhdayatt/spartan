@@ -51,6 +51,9 @@
                                 </td>
                                 <td>
                                     <a href="#" class="btn btn-info btn-sm btn-detail-penerimaan" data-id="{{ $penerimaan->id_penerimaan }}">Detail</a>
+                                    @if ($penerimaan->status_penerimaan == 'checking')
+                                        <a href="{{ route('penerimaan.qc', $penerimaan->id_penerimaan) }}" class="btn btn-warning btn-sm">Proses QC</a>
+                                    @endif
                                 </td>
                             </tr>
                             @empty

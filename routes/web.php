@@ -56,6 +56,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('penerimaan/create', [PenerimaanController::class, 'create'])->name('penerimaan.create');
         Route::get('penerimaan/{penerimaan}/details', [PenerimaanController::class, 'getDetailsJson'])->name('penerimaan.details.json');
         Route::post('penerimaan', [PenerimaanController::class, 'store'])->name('penerimaan.store');
+        Route::get('penerimaan/{penerimaan}/qc', [PenerimaanController::class, 'showQcForm'])->name('penerimaan.qc');
+        Route::post('penerimaan/{penerimaan}/qc', [PenerimaanController::class, 'processQc'])->name('penerimaan.processQc');
 
     });
 });
