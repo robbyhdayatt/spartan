@@ -70,6 +70,12 @@
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
+                    <a href="{{ route('approvals.index') }}" class="nav-link {{ request()->is('approvals*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-tasks"></i>
+                        <p>Persetujuan Saya</p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="{{ route('home') }}" class="nav-link {{ request()->is('home*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>Dashboard</p>
@@ -176,6 +182,27 @@
                     <a href="{{ route('retur.index') }}" class="nav-link {{ request()->is('transaksi/retur*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-undo-alt"></i>
                         <p>Retur</p>
+                    </a>
+                </li>
+                {{-- ... setelah grup menu INVENTARIS ... --}}
+                <li class="nav-header">LAPORAN</li>
+                <li class="nav-item">
+                    <a href="{{ route('laporan.stok.index') }}" class="nav-link {{ request()->is('laporan/stok*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <p>Laporan Stok</p>
+                    </a>
+                </li>
+                <li class="nav-header">PENGATURAN</li>
+                <li class="nav-item">
+                    <a href="{{ route('approval-levels.index') }}" class="nav-link {{ request()->is('settings/approval-levels*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>Aturan Approval</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('settings/users*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-users-cog"></i>
+                        <p>Manajemen User</p>
                     </a>
                 </li>
             </ul>

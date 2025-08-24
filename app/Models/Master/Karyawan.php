@@ -5,6 +5,7 @@ namespace App\Models\Master;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 class Karyawan extends Model
 {
@@ -33,5 +34,9 @@ class Karyawan extends Model
     public function gudang()
     {
         return $this->belongsTo(Gudang::class, 'id_gudang_asal');
+    }
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id_karyawan');
     }
 }

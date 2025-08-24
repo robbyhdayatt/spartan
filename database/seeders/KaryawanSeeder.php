@@ -33,7 +33,7 @@ class KaryawanSeeder extends Seeder
         Karyawan::create(['kode_karyawan' => 'KAR-002', 'nama_karyawan' => 'Citra Lestari', 'id_jabatan' => $jabatanAdminGudang->id_jabatan, 'id_gudang_asal' => $gudangPusat->id_gudang, 'status_aktif' => 1]);
         Karyawan::create(['kode_karyawan' => 'KAR-003', 'nama_karyawan' => 'Doni Saputra', 'id_jabatan' => $jabatanKepalaCabang->id_jabatan, 'id_gudang_asal' => $gudangMetro->id_gudang, 'status_aktif' => 1]);
         Karyawan::create(['kode_karyawan' => 'KAR-004', 'nama_karyawan' => 'Eka Putri', 'id_jabatan' => $jabatanPartCounter->id_jabatan, 'id_gudang_asal' => $gudangMetro->id_gudang, 'status_aktif' => 1]);
-        Karyawan::create(['kode_karyawan' => 'KAR-005', 'nama_karyawan' => 'Sandy', 'id_jabatan' => $jabatanIT->id_jabatan, 'id_gudang_asal' => $gudangPusat->id_gudang, 'status_aktif' => 1]);
+        Karyawan::create(['kode_karyawan' => 'KAR-005', 'nama_karyawan' => 'Robby', 'id_jabatan' => $jabatanIT->id_jabatan, 'id_gudang_asal' => $gudangPusat->id_gudang, 'status_aktif' => 1]);
         Karyawan::create(['kode_karyawan' => 'KAR-006', 'nama_karyawan' => 'Gunawan', 'id_jabatan' => $jabatanKoorSales->id_jabatan, 'id_gudang_asal' => $gudangPusat->id_gudang, 'status_aktif' => 1]);
         Karyawan::create(['kode_karyawan' => 'KAR-007', 'nama_karyawan' => 'Herlina', 'id_jabatan' => $jabatanSalesman->id_jabatan, 'id_gudang_asal' => $gudangMetro->id_gudang, 'status_aktif' => 1]);
 
