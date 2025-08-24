@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Master\StokLokasi;
 use App\Models\Transaksi\KartuStok;
+use App\Models\Master\StokSummary;
 
 class PenerimaanController extends Controller
 {
@@ -105,63 +106,56 @@ class PenerimaanController extends Controller
 
             foreach ($request->details as $id_detail => $data) {
                 $detail = $penerimaan->details()->findOrFail($id_detail);
-                
-                // Pastikan qty approved + rejected tidak melebihi qty diterima
+
                 if (($data['qty_approved'] + $data['qty_rejected']) > $detail->qty_diterima) {
                     throw new \Exception("Jumlah approved & rejected untuk part {$detail->part->nama_part} melebihi jumlah diterima.");
                 }
 
-                // 1. Update Detail Penerimaan
+                // 1. Update Detail Penerimaan (kode ini tetap sama)
                 $detail->qty_approved = $data['qty_approved'];
                 $detail->qty_rejected = $data['qty_rejected'];
                 $detail->qc_notes = $data['qc_notes'];
-                $detail->status_qc = 'passed'; // Asumsi sudah selesai
+                $detail->status_qc = 'passed';
                 $detail->save();
 
                 $totalApproved += $detail->qty_approved;
                 $totalRejected += $detail->qty_rejected;
 
-                // 2. Update Stok & Kartu Stok
+                // 2. Update Stok & Kartu Stok (kode ini tetap sama)
                 if ($detail->qty_approved > 0) {
-                    // Update atau buat entri di Stok Lokasi
-                    $stokLokasi = StokLokasi::firstOrNew([
-                        'id_part' => $detail->id_part,
-                        'id_gudang' => $penerimaan->id_gudang_tujuan
-                    ]);
+                    $stokLokasi = StokLokasi::firstOrNew(['id_part' => $detail->id_part, 'id_gudang' => $penerimaan->id_gudang_tujuan]);
                     $stokLokasi->quantity += $detail->qty_approved;
                     $stokLokasi->save();
-
-                    // Catat di Kartu Stok
-                    KartuStok::create([
-                        'id_part' => $detail->id_part,
-                        'id_gudang' => $penerimaan->id_gudang_tujuan,
-                        'jenis_transaksi' => 'qc_approved',
-                        'referensi_dokumen' => $penerimaan->nomor_penerimaan,
-                        'referensi_id' => $penerimaan->id_penerimaan,
-                        'masuk' => $detail->qty_approved,
-                        'kondisi_stok' => 'baik',
-                        'created_by' => auth()->id(),
-                    ]);
+                    KartuStok::create([ 'id_part' => $detail->id_part, 'id_gudang' => $penerimaan->id_gudang_tujuan, 'jenis_transaksi' => 'qc_approved', 'referensi_dokumen' => $penerimaan->nomor_penerimaan, 'referensi_id' => $penerimaan->id_penerimaan, 'masuk' => $detail->qty_approved, 'kondisi_stok' => 'baik', 'created_by' => auth()->id(), ]);
                 }
-
                 if ($detail->qty_rejected > 0) {
-                    // Update atau buat entri di Stok Lokasi (stok rusak)
-                    $stokLokasi = StokLokasi::firstOrNew([
-                        'id_part' => $detail->id_part,
-                        'id_gudang' => $penerimaan->id_gudang_tujuan
-                    ]);
+                    $stokLokasi = StokLokasi::firstOrNew(['id_part' => $detail->id_part, 'id_gudang' => $penerimaan->id_gudang_tujuan]);
                     $stokLokasi->quantity_rusak += $detail->qty_rejected;
                     $stokLokasi->save();
                 }
+                $this->_updateStockSummary($detail->id_part);
             }
 
-            // 3. Update Header Penerimaan
+            // 3. Update Header Penerimaan (kode ini tetap sama)
             $penerimaan->total_qty_approved = $totalApproved;
             $penerimaan->total_qty_rejected = $totalRejected;
             $penerimaan->status_penerimaan = 'completed';
             $penerimaan->qc_by = auth()->user()->id_karyawan;
             $penerimaan->qc_date = now();
             $penerimaan->save();
+
+            $pembelian = $penerimaan->pembelian()->with('details')->first();
+            if ($pembelian) {
+                $totalDipesan = $pembelian->details->sum('quantity');
+                $totalDiterima = $pembelian->details->sum('qty_received');
+
+                if ($totalDiterima >= $totalDipesan) {
+                    $pembelian->status_pembelian = 'received'; // Atau 'completed' jika ada logika pembayaran
+                } else {
+                    $pembelian->status_pembelian = 'partial_received';
+                }
+                $pembelian->save();
+            }
 
             DB::commit();
             return redirect()->route('penerimaan.index')->with('success', 'Proses QC & Finalisasi Penerimaan berhasil.');
@@ -170,6 +164,25 @@ class PenerimaanController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+        private function _updateStockSummary(int $partId)
+    {
+        // Hitung total dari semua gudang untuk part ini
+        $totalStok = StokLokasi::where('id_part', $partId)->sum('quantity');
+        $totalStokRusak = StokLokasi::where('id_part', $partId)->sum('quantity_rusak');
+        $totalStokKarantina = StokLokasi::where('id_part', $partId)->sum('quantity_quarantine');
+
+        // Gunakan updateOrCreate untuk membuat atau memperbarui record
+        StokSummary::updateOrCreate(
+            ['id_part' => $partId],
+            [
+                'stok_tersedia' => $totalStok,
+                'stok_rusak' => $totalStokRusak,
+                'stok_quarantine' => $totalStokKarantina,
+                'stok_total' => $totalStok + $totalStokRusak + $totalStokKarantina,
+                'last_updated' => now()
+            ]
+        );
     }
     public function getDetailsJson(Penerimaan $penerimaan)
     {
