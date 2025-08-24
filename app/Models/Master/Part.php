@@ -41,4 +41,8 @@ class Part extends Model
     {
         return $this->belongsTo(Brand::class, 'id_brand');
     }
+    public function stok_summary()
+    {
+        return $this->hasOne(\App\Models\Master\StokSummary::class, 'id_part');
+    }
 }

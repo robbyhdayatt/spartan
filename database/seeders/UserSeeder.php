@@ -5,39 +5,47 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Master\Karyawan;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        // Ambil 2 karyawan pertama untuk dijadikan user
-        $adminKaryawan = Karyawan::first();
-        $staffKaryawan = Karyawan::skip(1)->first();
+        DB::table('user')->truncate();
 
-        // Pastikan karyawan ada sebelum membuat user
-        if ($adminKaryawan) {
+        // Ambil karyawan berdasarkan kode
+        $manager = Karyawan::where('kode_karyawan', 'KAR-001')->first();
+        $partCounter = Karyawan::where('kode_karyawan', 'KAR-004')->first();
+        $itSupervisor = Karyawan::where('kode_karyawan', 'KAR-005')->first();
+
+        // Buat user untuk IT Supervisor sebagai Super Admin
+        if ($itSupervisor) {
             User::create([
-                'id_karyawan' => $adminKaryawan->id_karyawan,
-                'username' => 'admin',
+                'id_karyawan' => $itSupervisor->id_karyawan,
+                'username' => 'admin.it',
                 'password_hash' => Hash::make('password'),
                 'role_level' => 'admin',
-                'status_aktif' => 1,
             ]);
         }
-
-        if ($staffKaryawan) {
+        
+        // Buat user untuk Manager
+        if ($manager) {
             User::create([
-                'id_karyawan' => $staffKaryawan->id_karyawan,
-                'username' => 'staff',
+                'id_karyawan' => $manager->id_karyawan,
+                'username' => 'budi.manager',
+                'password_hash' => Hash::make('password'),
+                'role_level' => 'manager',
+            ]);
+        }
+        
+        // Buat user untuk Staff
+        if ($partCounter) {
+            User::create([
+                'id_karyawan' => $partCounter->id_karyawan,
+                'username' => 'eka.staff',
                 'password_hash' => Hash::make('password'),
                 'role_level' => 'staff',
-                'status_aktif' => 1,
             ]);
         }
     }

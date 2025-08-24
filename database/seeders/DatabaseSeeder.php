@@ -32,7 +32,8 @@ class DatabaseSeeder extends Seeder
         ]);
         // User dibuat setelah Karyawan ada
         $this->call([
-            UserSeeder::class, // <-- TAMBAHKAN INI
+            UserSeeder::class,
+            SalesSeeder::class,
         ]);
 
         // Setelah Karyawan ada, kita update PIC Gudang
