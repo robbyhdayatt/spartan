@@ -158,6 +158,26 @@
                         <p>Penerimaan Barang</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->is('transaksi/penjualan*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                        <p>Penjualan</p>
+                    </a>
+                </li>
+                {{-- ... setelah menu TRANSAKSI ... --}}
+                <li class="nav-header">INVENTARIS</li>
+                <li class="nav-item">
+                    <a href="{{ route('adjustment.index') }}" class="nav-link {{ request()->is('transaksi/adjustment*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-clipboard-check"></i>
+                        <p>Stock Adjustment</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('retur.index') }}" class="nav-link {{ request()->is('transaksi/retur*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-undo-alt"></i>
+                        <p>Retur</p>
+                    </a>
+                </li>
             </ul>
         </nav>
     </div>
