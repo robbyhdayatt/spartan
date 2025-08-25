@@ -18,6 +18,7 @@ class PenjualanController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['penjualan', 'read']);
         $penjualans = Penjualan::with(['konsumen', 'sales'])->latest()->paginate(10);
         $konsumens = Konsumen::where('status_aktif', 1)->get();
         $salespersons = Karyawan::where('status_aktif', 1)->whereHas('jabatan', function($q){
@@ -30,6 +31,7 @@ class PenjualanController extends Controller
 
     public function store(StorePenjualanRequest $request)
     {
+        $this->authorize('access', ['penjualan', 'create']);
         DB::beginTransaction();
         try {
             // Asumsi penjualan dilakukan dari gudang utama (ID 1), sesuaikan jika perlu
@@ -109,6 +111,7 @@ class PenjualanController extends Controller
 
     public function getDetailsJson(Penjualan $penjualan)
     {
+        $this->authorize('access', ['penjualan', 'read']);
         $penjualan->load(['konsumen', 'sales', 'details.part']);
         return response()->json($penjualan);
     }

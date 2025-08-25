@@ -18,12 +18,14 @@ class PenerimaanController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['penerimaan', 'read']);
         $penerimaans = Penerimaan::with(['pembelian', 'supplier', 'gudang'])->latest()->paginate(10);
         return view('transaksi.penerimaan.index', compact('penerimaans'));
     }
 
     public function create(Request $request)
     {
+        $this->authorize('access', ['penerimaan', 'create']);
         $pembelian = Pembelian::with('details.part')->findOrFail($request->po_id);
         $gudangs = Gudang::where('status_aktif', 1)->get();
 
@@ -32,6 +34,7 @@ class PenerimaanController extends Controller
 
     public function store(StorePenerimaanRequest $request)
     {
+        $this->authorize('access', ['penerimaan', 'create']);
         DB::beginTransaction();
         try {
             $pembelian = Pembelian::with('details')->findOrFail($request->id_pembelian);
@@ -81,6 +84,7 @@ class PenerimaanController extends Controller
     }
     public function showQcForm(Penerimaan $penerimaan)
     {
+        $this->authorize('access', ['penerimaan', 'update']);
         // Hanya proses dokumen yang statusnya 'checking'
         if ($penerimaan->status_penerimaan !== 'checking') {
             return redirect()->route('penerimaan.index')->with('error', 'Dokumen penerimaan ini sudah diproses atau dibatalkan.');
@@ -92,6 +96,7 @@ class PenerimaanController extends Controller
 
     public function processQc(Request $request, Penerimaan $penerimaan)
     {
+        $this->authorize('access', ['penerimaan', 'update']);
         // Validasi sederhana
         $request->validate([
             'details' => 'required|array',
@@ -165,7 +170,8 @@ class PenerimaanController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-        private function _updateStockSummary(int $partId)
+
+    private function _updateStockSummary(int $partId)
     {
         // Hitung total dari semua gudang untuk part ini
         $totalStok = StokLokasi::where('id_part', $partId)->sum('quantity');
@@ -186,6 +192,7 @@ class PenerimaanController extends Controller
     }
     public function getDetailsJson(Penerimaan $penerimaan)
     {
+        $this->authorize('access', ['penerimaan', 'read']);
         $penerimaan->load(['supplier', 'pembelian', 'gudang', 'details.part']);
         return response()->json($penerimaan);
     }

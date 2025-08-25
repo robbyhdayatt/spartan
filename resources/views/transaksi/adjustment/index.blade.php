@@ -10,8 +10,9 @@
             </div>
         </div>
         <div class="card-body">
-            @if (session('success')) <div class="alert alert-success">{{ session('success') }}</div> @endif
-            @if (session('error')) <div class="alert alert-danger">{{ session('error') }}</div> @endif
+            @if (session('success')) <div class="alert alert-success alert-dismissible fade show" role="alert">{{ session('success') }}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div> @endif
+            @if (session('error')) <div class="alert alert-danger alert-dismissible fade show" role="alert">{{ session('error') }}<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div> @endif
+            
             <table class="table table-bordered table-hover">
                 <thead><tr><th>No</th><th>No. Dokumen</th><th>Gudang</th><th>Tanggal</th><th>Jenis</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody>
@@ -22,8 +23,21 @@
                         <td>{{ $adj->gudang->nama_gudang ?? 'N/A' }}</td>
                         <td>{{ \Carbon\Carbon::parse($adj->tanggal_adjustment)->format('d-m-Y') }}</td>
                         <td class="text-capitalize">{{ $adj->jenis_adjustment }}</td>
-                        <td><span class="badge badge-success text-capitalize">{{ $adj->status_adjustment }}</span></td>
-                        <td><a href="#" class="btn btn-info btn-sm">Detail</a></td>
+                        <td>
+                            @php
+                                $statusClass = ['draft'=>'secondary', 'pending_approval'=>'warning', 'completed'=>'success', 'cancelled'=>'danger', 'rejected'=>'danger'][$adj->status_adjustment] ?? 'light';
+                            @endphp
+                            <span class="badge badge-{{ $statusClass }} text-capitalize">{{ str_replace('_', ' ', $adj->status_adjustment) }}</span>
+                        </td>
+                        <td>
+                            <a href="#" class="btn btn-info btn-sm btn-detail" data-id="{{ $adj->id_adjustment }}">Detail</a>
+                            @if($adj->status_adjustment == 'draft')
+                                <form action="{{ route('adjustment.submit', $adj->id_adjustment) }}" method="POST" class="d-inline" onsubmit="return confirm('Ajukan dokumen ini untuk persetujuan?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-sm">Ajukan</button>
+                                </form>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr><td colspan="7" class="text-center">Data tidak ditemukan.</td></tr>
@@ -35,7 +49,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="createModal" tabindex="-1" role="dialog"><div class="modal-dialog modal-xl" role="document"><div class="modal-content">
+<div class="modal fade" id="createModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
 <div class="modal-header"><h5 class="modal-title">Form Stock Adjustment</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
 <form action="{{ route('adjustment.store') }}" method="POST"> @csrf
 <div class="modal-body">
@@ -51,6 +65,19 @@
 </div>
 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Adjustment</button></div>
 </form></div></div></div>
+
+<div class="modal fade" id="detailModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title" id="detailModalLabel">Detail Stock Adjustment</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+<div class="modal-body" id="detail-content"></div>
+<div class="modal-footer">
+    <div id="approval-actions-adj" style="display: none;" class="mr-auto">
+        <form id="approveFormAdj" action="" method="POST" class="d-inline"> @csrf <button type="submit" class="btn btn-success">Approve</button></form>
+        {{-- Tombol reject bisa ditambahkan di sini jika diperlukan --}}
+    </div>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+</div>
+</div></div></div>
+
 
 <template id="detail-row-template">
     <tr>
@@ -68,9 +95,9 @@
 $(document).ready(function() {
     let detailIndex = 0;
 
+    // === LOGIC UNTUK MODAL CREATE ===
     $('#btn-create-adjustment').on('click', function(e) { e.preventDefault(); $('#createModal').modal('show'); });
-    $('#createModal').on('hidden.bs.modal', function () { $('#details-container').empty(); detailIndex = 0; });
-
+    $('#createModal').on('hidden.bs.modal', function () { $('#details-container').empty(); detailIndex = 0; $('#select_gudang').val(''); });
     $('#btn-add-detail').on('click', function() {
         let gudangId = $('#select_gudang').val();
         if (!gudangId) { alert('Harap pilih gudang terlebih dahulu!'); return; }
@@ -78,40 +105,72 @@ $(document).ready(function() {
         $('#details-container').append(template);
         detailIndex++;
     });
-
     $(document).on('click', '.btn-remove-detail', function() { $(this).closest('tr').remove(); });
-
-    $(document).on('change', '.select-part', function() {
+    $(document).on('change', '.select-part, #select_gudang', function() {
+        $('#details-container').find('.select-part').trigger('updateStock');
+    });
+    $(document).on('updateStock', '.select-part', function() {
         let row = $(this).closest('tr');
         let partId = $(this).val();
         let gudangId = $('#select_gudang').val();
-
         row.find('.stok-sistem, .stok-fisik, .selisih').val('');
         if (!partId || !gudangId) return;
-
         $.ajax({
-            url: '{{ route("adjustment.get-stock") }}',
-            type: 'GET',
-            data: { part_id: partId, gudang_id: gudangId },
-            success: function(response) {
-                row.find('.stok-sistem').val(response.stok);
-                updateSelisih(row);
-            }
+            url: '{{ route("adjustment.get-stock") }}', type: 'GET', data: { part_id: partId, gudang_id: gudangId },
+            success: function(response) { row.find('.stok-sistem').val(response.stok); updateSelisih(row); }
         });
     });
-
-    $(document).on('input', '.stok-fisik', function() {
-        updateSelisih($(this).closest('tr'));
-    });
-
+    $(document).on('input', '.stok-fisik', function() { updateSelisih($(this).closest('tr')); });
     function updateSelisih(row) {
         let stokSistem = parseInt(row.find('.stok-sistem').val()) || 0;
         let stokFisik = parseInt(row.find('.stok-fisik').val()) || 0;
         let selisih = stokFisik - stokSistem;
-
         let selisihText = selisih > 0 ? '+' + selisih : selisih;
         row.find('.selisih').val(selisihText);
     }
+
+    // === LOGIC UNTUK MODAL DETAIL & APPROVAL (AJAX) ===
+    $('.btn-detail').on('click', function(e){
+        e.preventDefault();
+        let id = $(this).data('id');
+        let url = '{{ route("adjustment.details.json", ":id") }}'.replace(':id', id);
+        $('#approval-actions-adj').hide();
+        $('#detailModalLabel').text('Memuat Detail...');
+        $('#detail-content').html('<p class="text-center">Memuat data...</p>');
+        $('#detailModal').modal('show');
+
+        $.ajax({
+            url: url, type: 'GET',
+            success: function(response){
+                $('#detailModalLabel').text('Detail Adjustment: ' + response.nomor_adjustment);
+                let tgl = new Date(response.tanggal_adjustment).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                let itemsHtml = '';
+                response.details.forEach(function(detail, index) {
+                    let selisih = detail.stok_fisik - detail.stok_sistem;
+                    let selisihText = selisih > 0 ? '+' + selisih : selisih;
+                    itemsHtml += `<tr><td>${index + 1}</td><td>${detail.part.nama_part}</td><td class="text-center">${detail.stok_sistem}</td><td class="text-center">${detail.stok_fisik}</td><td class="text-center">${selisihText}</td></tr>`;
+                });
+                
+                let detailHtml = `
+                    <p><strong>No. Dokumen:</strong> ${response.nomor_adjustment}</p>
+                    <p><strong>Gudang:</strong> ${response.gudang.nama_gudang}</p>
+                    <p><strong>Tanggal:</strong> ${tgl}</p>
+                    <p><strong>Jenis:</strong> <span class="text-capitalize">${response.jenis_adjustment}</span></p>
+                    <table class="table table-sm table-bordered mt-3">
+                        <thead class="thead-light"><tr><th>No</th><th>Part</th><th class="text-center">Stok Sistem</th><th class="text-center">Stok Fisik</th><th class="text-center">Selisih</th></tr></thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>`;
+                $('#detail-content').html(detailHtml);
+
+                let isApprover = {{ $isApprover ? 'true' : 'false' }};
+                if (response.status_adjustment === 'pending_approval' && isApprover) {
+                    let approveUrl = '{{ route("adjustment.approve", ":id") }}'.replace(':id', response.id_adjustment);
+                    $('#approveFormAdj').attr('action', approveUrl);
+                    $('#approval-actions-adj').show();
+                }
+            }
+        });
+    });
 });
 </script>
 @endpush

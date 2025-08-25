@@ -8,7 +8,9 @@
                 <div class="card-header">
                     <h3 class="card-title">Data Karyawan</h3>
                     <div class="card-tools">
+                        @can('manage-master-data')
                         <a href="#" id="btn-create-karyawan" class="btn btn-primary btn-sm">Tambah Data</a>
+                        @endcan
                     </div>
                 </div>
                 <div class="card-body">
@@ -41,6 +43,7 @@
                                 <td>{{ $karyawan->gudang->nama_gudang ?? 'N/A' }}</td>
                                 <td>{!! $karyawan->status_aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Tidak Aktif</span>' !!}</td>
                                 <td>
+                                    @can('manage-master-data')
                                     <a href="#" class="btn btn-warning btn-sm btn-edit-karyawan"
                                        data-id="{{ $karyawan->id_karyawan }}"
                                        data-kode_karyawan="{{ $karyawan->kode_karyawan }}"
@@ -54,11 +57,15 @@
                                        data-status_aktif="{{ $karyawan->status_aktif }}">
                                        Edit
                                     </a>
+                                    @endcan
+
+                                    @can('delete-data')
                                     <form action="{{ route('karyawan.destroy', $karyawan->id_karyawan) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus data ini?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                             @empty

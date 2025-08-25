@@ -20,6 +20,7 @@ use App\Http\Controllers\Laporan\StokController;
 use App\Http\Controllers\Setting\ApprovalLevelController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\Setting\UserController;
+use App\Http\Controllers\Setting\UserPermissionController;
 
 
 Route::get('/', function () {
@@ -72,6 +73,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('adjustment', [StockAdjustmentController::class, 'index'])->name('adjustment.index');
         Route::post('adjustment', [StockAdjustmentController::class, 'store'])->name('adjustment.store');
         Route::get('get-stock-sistem', [StockAdjustmentController::class, 'getStockSistem'])->name('adjustment.get-stock');
+        Route::get('adjustment/{adjustment}/details', [StockAdjustmentController::class, 'getDetailsJson'])->name('adjustment.details.json');
+        Route::post('adjustment/{adjustment}/submit', [StockAdjustmentController::class, 'submitApproval'])->name('adjustment.submit');
+        Route::post('adjustment/{adjustment}/approve', [StockAdjustmentController::class, 'approve'])->name('adjustment.approve');        
         
         // Retur
         Route::get('retur', [ReturController::class, 'index'])->name('retur.index');
@@ -88,5 +92,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('settings')->group(function() {
         Route::resource('approval-levels', ApprovalLevelController::class)->parameters(['approval-levels' => 'approvalLevel']);
         Route::resource('users', UserController::class);
+        Route::get('permissions', [UserPermissionController::class, 'index'])->name('permissions.index');
+        Route::post('permissions', [UserPermissionController::class, 'update'])->name('permissions.update');
     });
 });

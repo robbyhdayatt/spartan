@@ -13,6 +13,7 @@ class PartController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['parts', 'read']); // Proteksi Read
         $parts = Part::with(['kategori', 'brand'])->latest()->paginate(10);
         $kategoris = Kategori::where('status_aktif', 1)->get();
         $brands = Brand::where('status_aktif', 1)->get();
@@ -22,18 +23,21 @@ class PartController extends Controller
 
     public function store(StorePartRequest $request)
     {
+        $this->authorize('access', ['parts', 'create']); // Proteksi Create
         Part::create($request->validated());
         return redirect()->route('parts.index')->with('success', 'Part berhasil ditambahkan.');
     }
 
     public function update(UpdatePartRequest $request, Part $part)
     {
+        $this->authorize('access', ['parts', 'update']); // Proteksi Update
         $part->update($request->validated());
         return redirect()->route('parts.index')->with('success', 'Part berhasil diperbarui.');
     }
 
     public function destroy(Part $part)
     {
+        $this->authorize('access', ['parts', 'delete']); // Proteksi Delete
         $part->delete();
         return redirect()->route('parts.index')->with('success', 'Part berhasil dihapus.');
     }
