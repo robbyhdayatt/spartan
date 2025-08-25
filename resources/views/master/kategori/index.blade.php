@@ -8,7 +8,9 @@
                 <div class="card-header">
                     <h3 class="card-title">Data Kategori</h3>
                     <div class="card-tools">
+                        @can('manage-master-data')
                         <a href="#" id="btn-create-kategori" class="btn btn-primary btn-sm">Tambah Data</a>
+                        @endcan
                     </div>
                 </div>
                 <div class="card-body">
@@ -39,6 +41,7 @@
                                 <td>{{ $kategori->parent->nama_kategori ?? 'Tidak Ada' }}</td>
                                 <td>{!! $kategori->status_aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Tidak Aktif</span>' !!}</td>
                                 <td>
+                                    @can('manage-master-data')
                                     <a href="#"
                                        class="btn btn-warning btn-sm btn-edit-kategori"
                                        data-id="{{ $kategori->id_kategori }}"
@@ -48,11 +51,15 @@
                                        data-status_aktif="{{ $kategori->status_aktif }}">
                                        Edit
                                     </a>
+                                    @endcan
+
+                                    @can('delete-data')
                                     <form action="{{ route('categories.destroy', $kategori->id_kategori) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                             @empty

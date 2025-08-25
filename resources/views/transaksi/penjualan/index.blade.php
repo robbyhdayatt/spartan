@@ -8,7 +8,9 @@
                 <div class="card-header">
                     <h3 class="card-title">Data Penjualan</h3>
                     <div class="card-tools">
+                        @can('access', ['penjualan', 'create'])
                         <a href="#" id="btn-create-penjualan" class="btn btn-primary btn-sm">Buat Penjualan Baru</a>
+                        @endcan
                     </div>
                 </div>
                 <div class="card-body">

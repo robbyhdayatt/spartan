@@ -10,6 +10,7 @@ class StokController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('access', ['laporan.stok', 'read']);
         $query = StokRealTime::query();
 
         // Logika untuk pencarian

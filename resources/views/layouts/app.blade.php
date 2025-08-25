@@ -69,12 +69,7 @@
 
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <li class="nav-item">
-                    <a href="{{ route('approvals.index') }}" class="nav-link {{ request()->is('approvals*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-tasks"></i>
-                        <p>Persetujuan Saya</p>
-                    </a>
-                </li>
+                
                 <li class="nav-item">
                     <a href="{{ route('home') }}" class="nav-link {{ request()->is('home*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -82,129 +77,94 @@
                     </a>
                 </li>
 
-                <li class="nav-header">MASTER DATA</li>
-
-                @php
-                    $masterRoutes = [
-                        'suppliers*', 'brands*', 'categories*', 'jabatan*',
-                        'gudang*', 'karyawan*', 'konsumen*', 'parts*'
-                    ];
-                @endphp
-
-                <li class="nav-item {{ request()->is($masterRoutes) ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link {{ request()->is($masterRoutes) ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-database"></i>
-                        <p>
-                            Master
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+                @can('access', ['approvals', 'read'])
+                <li class="nav-item">
+                    <a href="{{ route('approvals.index') }}" class="nav-link {{ request()->is('approvals*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-tasks"></i>
+                        <p>Persetujuan Saya</p>
                     </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('suppliers.index') }}" class="nav-link {{ request()->is('suppliers*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Supplier</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('brands.index') }}" class="nav-link {{ request()->is('brands*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Brand</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('categories.index') }}" class="nav-link {{ request()->is('categories*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Kategori</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('jabatan.index') }}" class="nav-link {{ request()->is('jabatan*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Jabatan</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('gudang.index') }}" class="nav-link {{ request()->is('gudang*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Gudang</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('karyawan.index') }}" class="nav-link {{ request()->is('karyawan*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Karyawan</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('konsumen.index') }}" class="nav-link {{ request()->is('konsumen*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Konsumen</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('parts.index') }}" class="nav-link {{ request()->is('parts*') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Part</p>
-                            </a>
-                        </li>
-                    </ul>
                 </li>
-                {{-- ... setelah menu master data ... --}}
+                @endcan
+
+                {{-- Dibungkus @auth agar tidak error di halaman login --}}
+                @auth 
+                    {{-- Grup menu ini akan tampil jika user bisa membaca minimal salah satu modul di dalamnya --}}
+                    @if (Auth::user()->can('access', ['suppliers', 'read']) || Auth::user()->can('access', ['brands', 'read']) || Auth::user()->can('access', ['parts', 'read']))
+                    <li class="nav-header">MASTER DATA</li>
+                    <li class="nav-item {{ request()->is('suppliers*', 'brands*', 'categories*', 'jabatan*', 'gudang*', 'karyawan*', 'konsumen*', 'parts*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->is('suppliers*', 'brands*', 'categories*', 'jabatan*', 'gudang*', 'karyawan*', 'konsumen*', 'parts*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-database"></i>
+                            <p>Master<i class="right fas fa-angle-left"></i></p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            @can('access', ['suppliers', 'read'])
+                            <li class="nav-item"><a href="{{ route('suppliers.index') }}" class="nav-link {{ request()->is('suppliers*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Supplier</p></a></li>
+                            @endcan
+                            @can('access', ['brands', 'read'])
+                            <li class="nav-item"><a href="{{ route('brands.index') }}" class="nav-link {{ request()->is('brands*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Brand</p></a></li>
+                            @endcan
+                            @can('access', ['categories', 'read'])
+                            <li class="nav-item"><a href="{{ route('categories.index') }}" class="nav-link {{ request()->is('categories*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Kategori</p></a></li>
+                            @endcan
+                            @can('access', ['jabatan', 'read'])
+                            <li class="nav-item"><a href="{{ route('jabatan.index') }}" class="nav-link {{ request()->is('jabatan*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Jabatan</p></a></li>
+                            @endcan
+                            @can('access', ['gudang', 'read'])
+                            <li class="nav-item"><a href="{{ route('gudang.index') }}" class="nav-link {{ request()->is('gudang*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Gudang</p></a></li>
+                            @endcan
+                            @can('access', ['karyawan', 'read'])
+                            <li class="nav-item"><a href="{{ route('karyawan.index') }}" class="nav-link {{ request()->is('karyawan*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Karyawan</p></a></li>
+                            @endcan
+                            @can('access', ['konsumen', 'read'])
+                            <li class="nav-item"><a href="{{ route('konsumen.index') }}" class="nav-link {{ request()->is('konsumen*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Konsumen</p></a></li>
+                            @endcan
+                            @can('access', ['parts', 'read'])
+                            <li class="nav-item"><a href="{{ route('parts.index') }}" class="nav-link {{ request()->is('parts*') ? 'active' : '' }}"><i class="far fa-circle nav-icon"></i><p>Part</p></a></li>
+                            @endcan
+                        </ul>
+                    </li>
+                    @endif
+                @endauth
+
                 <li class="nav-header">TRANSAKSI</li>
-                <li class="nav-item">
-                    <a href="{{ route('pembelian.index') }}" class="nav-link {{ request()->is('transaksi/pembelian*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-shopping-cart"></i>
-                        <p>Pembelian (PO)</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->is('transaksi/penerimaan*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-box-open"></i>
-                        <p>Penerimaan Barang</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->is('transaksi/penjualan*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-file-invoice-dollar"></i>
-                        <p>Penjualan</p>
-                    </a>
-                </li>
-                {{-- ... setelah menu TRANSAKSI ... --}}
+                @can('access', ['pembelian', 'read'])
+                <li class="nav-item"><a href="{{ route('pembelian.index') }}" class="nav-link {{ request()->is('transaksi/pembelian*') ? 'active' : '' }}"><i class="nav-icon fas fa-shopping-cart"></i><p>Pembelian (PO)</p></a></li>
+                @endcan
+                @can('access', ['penerimaan', 'read'])
+                <li class="nav-item"><a href="{{ route('penerimaan.index') }}" class="nav-link {{ request()->is('transaksi/penerimaan*') ? 'active' : '' }}"><i class="nav-icon fas fa-box-open"></i><p>Penerimaan Barang</p></a></li>
+                @endcan
+                @can('access', ['penjualan', 'read'])
+                <li class="nav-item"><a href="{{ route('penjualan.index') }}" class="nav-link {{ request()->is('transaksi/penjualan*') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice-dollar"></i><p>Penjualan</p></a></li>
+                @endcan
+
                 <li class="nav-header">INVENTARIS</li>
-                <li class="nav-item">
-                    <a href="{{ route('adjustment.index') }}" class="nav-link {{ request()->is('transaksi/adjustment*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-clipboard-check"></i>
-                        <p>Stock Adjustment</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('retur.index') }}" class="nav-link {{ request()->is('transaksi/retur*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-undo-alt"></i>
-                        <p>Retur</p>
-                    </a>
-                </li>
-                {{-- ... setelah grup menu INVENTARIS ... --}}
+                @can('access', ['adjustment', 'read'])
+                <li class="nav-item"><a href="{{ route('adjustment.index') }}" class="nav-link {{ request()->is('transaksi/adjustment*') ? 'active' : '' }}"><i class="nav-icon fas fa-clipboard-check"></i><p>Stock Adjustment</p></a></li>
+                @endcan
+                @can('access', ['retur', 'read'])
+                <li class="nav-item"><a href="{{ route('retur.index') }}" class="nav-link {{ request()->is('transaksi/retur*') ? 'active' : '' }}"><i class="nav-icon fas fa-undo-alt"></i><p>Retur</p></a></li>
+                @endcan
+
+                @can('access', ['laporan.stok', 'read'])
                 <li class="nav-header">LAPORAN</li>
-                <li class="nav-item">
-                    <a href="{{ route('laporan.stok.index') }}" class="nav-link {{ request()->is('laporan/stok*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-chart-bar"></i>
-                        <p>Laporan Stok</p>
-                    </a>
-                </li>
-                <li class="nav-header">PENGATURAN</li>
-                <li class="nav-item">
-                    <a href="{{ route('approval-levels.index') }}" class="nav-link {{ request()->is('settings/approval-levels*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-cog"></i>
-                        <p>Aturan Approval</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('settings/users*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-users-cog"></i>
-                        <p>Manajemen User</p>
-                    </a>
-                </li>
+                <li class="nav-item"><a href="{{ route('laporan.stok.index') }}" class="nav-link {{ request()->is('laporan/stok*') ? 'active' : '' }}"><i class="nav-icon fas fa-chart-bar"></i><p>Laporan Stok</p></a></li>
+                @endcan
+
+                {{-- Dibungkus @auth agar tidak error di halaman login --}}
+                @auth
+                    @if (Auth::user()->can('access', ['settings.approval-levels', 'read']) || Auth::user()->can('access', ['settings.users', 'read']) || Auth::user()->can('access', ['settings.permissions', 'read']))
+                    <li class="nav-header">PENGATURAN</li>
+                    @can('access', ['settings.approval-levels', 'read'])
+                    <li class="nav-item"><a href="{{ route('approval-levels.index') }}" class="nav-link {{ request()->is('settings/approval-levels*') ? 'active' : '' }}"><i class="nav-icon fas fa-cog"></i><p>Aturan Approval</p></a></li>
+                    @endcan
+                    @can('access', ['settings.users', 'read'])
+                    <li class="nav-item"><a href="{{ route('users.index') }}" class="nav-link {{ request()->is('settings/users*') ? 'active' : '' }}"><i class="nav-icon fas fa-users-cog"></i><p>Manajemen User</p></a></li>
+                    @endcan
+                    @can('access', ['settings.permissions', 'read'])
+                    <li class="nav-item"><a href="{{ route('permissions.index') }}" class="nav-link {{ request()->is('settings/permissions*') ? 'active' : '' }}"><i class="nav-icon fas fa-user-shield"></i><p>Hak Akses User</p></a></li>
+                    @endcan
+                    @endif
+                @endauth
             </ul>
         </nav>
     </div>

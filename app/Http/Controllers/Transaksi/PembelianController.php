@@ -15,8 +15,10 @@ use Illuminate\Support\Str;
 
 class PembelianController extends Controller
 {
+    
     public function index()
     {
+        $this->authorize('access', ['pembelian', 'read']);
         $pembelians = Pembelian::with('supplier')->latest()->paginate(10);
         $suppliers = Supplier::where('status_aktif', 1)->get();
         $parts = Part::where('status_aktif', 1)->get();
@@ -26,6 +28,7 @@ class PembelianController extends Controller
 
     public function store(StorePembelianRequest $request)
     {
+        $this->authorize('access', ['pembelian', 'create']);
         DB::beginTransaction();
         try {
             $subtotal = 0;
@@ -66,6 +69,7 @@ class PembelianController extends Controller
 
     public function submitApproval(Pembelian $pembelian)
     {
+        $this->authorize('access', ['pembelian', 'update']);
         if ($pembelian->status_pembelian !== 'draft') {
             return redirect()->back()->with('error', 'Hanya PO berstatus DRAFT yang bisa diajukan.');
         }
@@ -86,6 +90,7 @@ class PembelianController extends Controller
 
     public function approve(Pembelian $pembelian)
     {
+        $this->authorize('access', ['pembelian', 'update']);
         $correctRule = $this->getApprovalRule($pembelian);
         $userJabatanId = auth()->user()->karyawan->id_jabatan;
 
@@ -112,6 +117,7 @@ class PembelianController extends Controller
 
     public function reject(Request $request, Pembelian $pembelian)
     {
+        $this->authorize('access', ['pembelian', 'update']);
         $request->validate(['keterangan' => 'required|string|max:255']);
         $correctRule = $this->getApprovalRule($pembelian);
         $userJabatanId = auth()->user()->karyawan->id_jabatan;
@@ -138,9 +144,11 @@ class PembelianController extends Controller
 
     public function getDetailsJson(Pembelian $pembelian)
     {
+        $this->authorize('access', ['pembelian', 'read']);
         $pembelian->load(['supplier', 'details.part']);
         $correctRule = $this->getApprovalRule($pembelian);
         $pembelian->id_jabatan_required = $correctRule ? $correctRule->id_jabatan_required : null;
         return response()->json($pembelian);
     }
+
 }
