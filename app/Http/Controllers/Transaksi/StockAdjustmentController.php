@@ -53,30 +53,8 @@ class StockAdjustmentController extends Controller
                 'status_adjustment' => 'draft', // <-- STATUS AWAL DIUBAH MENJADI DRAFT
                 'keterangan' => $request->keterangan,
                 'created_by' => auth()->id(),
-
-        foreach ($request->details as $item) {
-            $part = Part::find($item['id_part']);
-            $stokLokasi = StokLokasi::firstOrCreate(
-                ['id_part' => $item['id_part'], 'id_gudang' => $request->id_gudang],
-                ['quantity' => 0]
-            );
-            $adj->details()->create([
-                'id_part' => $item['id_part'],
-                'stok_sistem' => $stokLokasi->quantity,
-                'stok_fisik' => $item['stok_fisik'],
-                'harga_satuan' => $part->harga_pokok ?? 0,
             ]);
-        }
-        return redirect()->route('adjustment.index')->with('success', 'Dokumen adjustment berhasil dibuat & menunggu diajukan.');
-    }
 
-    public function submitApproval(StockAdjustment $adjustment)
-    {
-        $this->authorize('access', ['adjustment', 'update']);
-        $adjustment->status_adjustment = 'pending_approval';
-        $adjustment->save();
-        return redirect()->route('adjustment.index')->with('success', 'Adjustment berhasil diajukan untuk persetujuan.');
-    }
             foreach ($request->details as $item) {
                 $part = Part::find($item['id_part']);
                 $stokLokasi = StokLokasi::firstOrCreate(

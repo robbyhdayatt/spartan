@@ -44,15 +44,6 @@ class ApprovalController extends Controller
                                     ->get();
         
         foreach ($allPendingAdjustment as $adj) {
-            // Untuk setiap adjustment, cari aturan yang paling pas
-            // Saat ini kita belum pakai nominal, jadi langsung ambil aturan 'adjustment'
-            $correctRule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
-
-        $allPendingAdjustment = StockAdjustment::with('gudang')
-                                    ->where('status_adjustment', 'pending_approval')
-                                    ->get();
-        
-        foreach ($allPendingAdjustment as $adj) {
             // Cari aturan untuk adjustment
             $correctRule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
 
