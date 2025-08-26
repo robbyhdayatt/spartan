@@ -52,7 +52,9 @@
                                 <td>
                                     <a href="#" class="btn btn-info btn-sm btn-detail-penerimaan" data-id="{{ $penerimaan->id_penerimaan }}">Detail</a>
                                     @if ($penerimaan->status_penerimaan == 'checking')
-                                        <a href="{{ route('penerimaan.qc', $penerimaan->id_penerimaan) }}" class="btn btn-warning btn-sm">Proses QC</a>
+                                        @can('access', ['penerimaan', 'update'])
+                                            <a href="{{ route('penerimaan.qc', $penerimaan->id_penerimaan) }}" class="btn btn-warning btn-sm">Proses QC</a>
+                                        @endcan
                                     @endif
                                 </td>
                             </tr>
@@ -113,35 +115,52 @@ $(document).ready(function () {
         let url = '{{ route("penerimaan.details.json", ":id") }}'.replace(':id', id);
 
         $('#detailPenerimaanModalLabel').text('Memuat Detail...');
-        $('#detail-penerimaan-items').html('<tr><td colspan="4" class="text-center">Memuat data...</td></tr>');
+        $('#detail-penerimaan-items').html('<tr><td colspan="5" class="text-center">Memuat data...</td></tr>');
         $('#detailPenerimaanModal').modal('show');
 
         $.ajax({
-            url: url,
-            type: 'GET',
+            url: url, type: 'GET',
             success: function(response) {
                 $('#detailPenerimaanModalLabel').text('Detail Penerimaan: ' + response.nomor_penerimaan);
-                $('#detail-nomor-penerimaan').text(response.nomor_penerimaan);
-                $('#detail-nomor-po').text(response.pembelian ? response.pembelian.nomor_po : 'N/A');
-                $('#detail-supplier').text(response.supplier ? response.supplier.nama_supplier : 'N/A');
-                $('#detail-gudang').text(response.gudang ? response.gudang.nama_gudang : 'N/A');
-                $('#detail-tanggal').text(new Date(response.tanggal_penerimaan).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}));
-
+                let tgl = new Date(response.tanggal_penerimaan).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                let pihak = `<strong>Supplier:</strong> ${response.supplier ? response.supplier.nama_supplier : 'N/A'}`;
+                
+                // PERBAIKAN LOGIKA TABEL DETAIL DIMULAI DARI SINI
                 let itemsHtml = '';
                 response.details.forEach(function(detail, index) {
                     itemsHtml += `
                         <tr>
                             <td>${index + 1}</td>
                             <td>${detail.part ? detail.part.nama_part : 'Part Dihapus'}</td>
-                            <td class="text-center">${detail.qty_dipesan}</td>
                             <td class="text-center">${detail.qty_diterima}</td>
+                            <td class="text-center text-success">${detail.qty_approved}</td>
+                            <td class="text-center text-danger">${detail.qty_rejected}</td>
                         </tr>
                     `;
                 });
-                $('#detail-penerimaan-items').html(itemsHtml);
+
+                let detailHtml = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">${pihak}<br><strong>Gudang Tujuan:</strong> ${response.gudang ? response.gudang.nama_gudang : 'N/A'}</div>
+                        <div class="col-md-6 text-md-right"><p><strong>No. Penerimaan:</strong> ${response.nomor_penerimaan}</p><p><strong>No. PO Terkait:</strong> ${response.pembelian ? response.pembelian.nomor_po : 'N/A'}</p><p><strong>Tanggal:</strong> ${tgl}</p></div>
+                    </div>
+                    <table class="table table-sm table-bordered mt-3">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Part</th>
+                                <th class="text-center">Qty Diterima</th>
+                                <th class="text-center">Qty Approved</th>
+                                <th class="text-center">Qty Rejected</th>
+                            </tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                `;
+                $('#detail-penerimaan-items').parent().parent().html(detailHtml); // Ganti seluruh isi modal body
             },
             error: function() {
-                 $('#detail-penerimaan-items').html('<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>');
+                $('#detail-penerimaan-items').parent().parent().html('<p class="text-center text-danger">Gagal memuat data.</p>');
             }
         });
     });

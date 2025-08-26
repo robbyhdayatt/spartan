@@ -61,12 +61,13 @@
                                     @csrf
                                     <button type="submit" class="btn btn-primary btn-sm">Ajukan</button>
                                 </form>
-                            @endif
-                            
+                            @endif                      
                             @if(in_array($pembelian->status_pembelian, ['approved', 'ordered', 'partial_received']))
-                                <a href="{{ route('penerimaan.create', ['po_id' => $pembelian->id_pembelian]) }}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-box-open"></i> Terima
-                                </a>
+                                @can('access', ['penerimaan', 'create'])
+                                    <a href="{{ route('penerimaan.create', ['po_id' => $pembelian->id_pembelian]) }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-box-open"></i> Terima
+                                    </a>
+                                @endcan
                             @endif
                         </td>
                     </tr>
@@ -134,7 +135,6 @@
             @csrf
             <button type="submit" class="btn btn-success">Approve</button>
         </form>
-        <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#rejectModal" id="btn-reject">Reject</a>
     </div>
     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
 </div>
@@ -218,15 +218,7 @@ $(document).ready(function() {
             error: function() { $('#detail-items-table').html('<tr><td colspan="5" class="text-center text-danger">Gagal memuat data.</td></tr>'); }
         });
     });
-
-    $('#detailModal').on('click', '#btn-reject', function(e) {
-        let approveAction = $('#approveForm').attr('action');
-        if(approveAction) {
-            let rejectUrl = approveAction.replace('/approve', '/reject');
-            $('#rejectForm').attr('action', rejectUrl);
-        }
-    });
-
+    
     @if ($errors->any())
         $('#createModal').modal('show');
     @endif

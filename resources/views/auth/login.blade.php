@@ -1,49 +1,63 @@
-@extends('layouts.app')
+@extends('layouts.auth')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Login') }}</div>
+<p class="login-box-msg" style="font-size: 1.1rem; color: #555;">Sign in to start your session</p>
 
-                <div class="card-body">
-                    <form method="POST" action="{{ route('login') }}">
-                        @csrf
+@if (session('status'))
+    <div class="alert alert-success" role="alert">
+        {{ session('status') }}
+    </div>
+@endif
 
-                        <div class="row mb-3">
-                            <label for="username" class="col-md-4 col-form-label text-md-end">{{ __('Username') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="username" type="text" class="form-control @error('username') is-invalid @enderror" name="username" value="{{ old('username') }}" required autocomplete="username" autofocus>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-0">
-                            <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Login') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+<form method="POST" action="{{ route('login') }}">
+    @csrf
+    
+    <div class="input-group mb-4">
+        <input type="text" 
+               class="form-control @error('username') is-invalid @enderror" 
+               name="username" 
+               value="{{ old('username') }}" 
+               placeholder="Username"
+               required 
+               autocomplete="username" 
+               autofocus
+               style="height: 50px;">
+        <div class="input-group-append">
+            <div class="input-group-text" style="width: 45px; justify-content: center;">
+                <span class="fas fa-user"></span>
             </div>
         </div>
+        @error('username') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
     </div>
+
+    <div class="input-group mb-4">
+        <input type="password" 
+               class="form-control @error('password') is-invalid @enderror" 
+               name="password" 
+               placeholder="Password"
+               required 
+               autocomplete="current-password"
+               style="height: 50px;">
+        <div class="input-group-append">
+            <div class="input-group-text" style="width: 45px; justify-content: center;">
+                <span class="fas fa-lock"></span>
+            </div>
+        </div>
+        @error('password') <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span> @enderror
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="text-center mt-4">
+    <small class="text-muted" style="font-size: 13px;">
+        &copy; {{ date('Y') }} SPARTAN System. All rights reserved.
+    </small>
 </div>
 @endsection

@@ -14,6 +14,6 @@ class SupplierSeeder extends Seeder
      */
     public function run()
     {
-        Supplier::factory(15)->create(); // Membuat 15 data supplier
+        Supplier::factory(5)->create(); // Membuat 5 data supplier
     }
 }

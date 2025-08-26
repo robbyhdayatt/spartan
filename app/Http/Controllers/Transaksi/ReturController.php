@@ -101,6 +101,11 @@ class ReturController extends Controller
         }
         return response()->json($doc ? $doc->details : []);
     }
+    public function getDetailsJson(Retur $retur)
+    {
+        $retur->load(['konsumen', 'supplier', 'details.part']);
+        return response()->json($retur);
+    }
 
     // Fungsi helper update summary
     private function _updateStockSummary(int $partId)
