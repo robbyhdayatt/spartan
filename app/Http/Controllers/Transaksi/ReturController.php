@@ -18,6 +18,7 @@ class ReturController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['retur', 'read']);
         $returs = Retur::with(['konsumen', 'supplier'])->latest()->paginate(10);
         $penjualans = Penjualan::whereIn('status_penjualan', ['processed', 'delivered', 'completed'])->get();
         $pembelians = Pembelian::whereIn('status_pembelian', ['received', 'partial_received'])->get();
@@ -26,6 +27,7 @@ class ReturController extends Controller
 
     public function store(StoreReturRequest $request)
     {
+        $this->authorize('access', ['retur', 'create']);
         DB::beginTransaction();
         try {
             $nomorRetur = 'RET-' . date('Ymd') . '-' . Str::random(4);
@@ -93,6 +95,7 @@ class ReturController extends Controller
     // Endpoint AJAX untuk mengambil item dari dokumen penjualan/pembelian
     public function getItemsForReturn(Request $request)
     {
+        $this->authorize('access', ['retur', 'read']);
         $request->validate(['id' => 'required|integer', 'type' => 'required|string']);
         if ($request->type == 'penjualan') {
             $doc = Penjualan::with('details.part')->find($request->id);

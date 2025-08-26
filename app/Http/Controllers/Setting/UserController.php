@@ -13,6 +13,7 @@ class UserController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['users', 'read']);
         $users = User::with('karyawan.jabatan')->latest()->paginate(10);
         
         // Ambil hanya karyawan yang belum punya akun user
@@ -23,6 +24,7 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('access', ['users', 'create']);
         $request->validate([
             'id_karyawan' => 'required|integer|exists:karyawan,id_karyawan|unique:user,id_karyawan',
             'username' => 'required|string|max:100|unique:user,username',
@@ -43,6 +45,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $this->authorize('access', ['users', 'update']);
         $request->validate([
             'username' => ['required', 'string', 'max:100', Rule::unique('user')->ignore($user->id_user, 'id_user')],
             'role_level' => 'required|string',
@@ -63,6 +66,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+       $this->authorize('access', ['users', 'delete']);
         // Sebaiknya jangan hapus user admin utama
         if ($user->id_user === 1) {
             return redirect()->route('users.index')->with('error', 'User admin utama tidak boleh dihapus.');

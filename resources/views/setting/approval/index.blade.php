@@ -33,6 +33,7 @@
                         <td>{{ $rule->level_sequence }}</td>
                         <td>{!! $rule->status_aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Tidak Aktif</span>' !!}</td>
                         <td>
+                            @can('manage-master-data')
                             <a href="#" class="btn btn-warning btn-sm btn-edit"
                                data-id="{{ $rule->id_approval_level }}"
                                data-jenis_dokumen="{{ $rule->jenis_dokumen }}"
@@ -43,10 +44,14 @@
                                data-status_aktif="{{ $rule->status_aktif }}">
                                Edit
                             </a>
+                            @endcan
+                            
+                            @can('delete-data')
                             <form action="{{ route('approval-levels.destroy', $rule->id_approval_level) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus aturan ini?');">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                             </form>
+                            @endcan
                         </td>
                     </tr>
                     @empty

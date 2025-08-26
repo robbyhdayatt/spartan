@@ -20,6 +20,7 @@ class PenjualanController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['penjualan', 'read']);
         $penjualans = Penjualan::with(['konsumen', 'sales'])->latest()->paginate(10);
         $konsumens = Konsumen::where('status_aktif', 1)->get();
         $salespersons = Karyawan::where('status_aktif', 1)->whereHas('jabatan', function($q){
@@ -32,6 +33,7 @@ class PenjualanController extends Controller
 
     public function store(StorePenjualanRequest $request)
     {
+        $this->authorize('access', ['penjualan', 'create']);
         DB::beginTransaction();
         try {
             $gudangId = 1;

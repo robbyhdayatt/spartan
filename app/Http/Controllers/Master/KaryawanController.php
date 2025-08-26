@@ -13,6 +13,7 @@ class KaryawanController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['karyawans', 'read']); // Proteksi Read
         $karyawans = Karyawan::with(['jabatan', 'gudang'])->latest()->paginate(10);
         $jabatans = Jabatan::where('status_aktif', 1)->get();
         $gudangs = Gudang::where('status_aktif', 1)->get();
@@ -22,18 +23,21 @@ class KaryawanController extends Controller
 
     public function store(StoreKaryawanRequest $request)
     {
+        $this->authorize('access', ['karyawans', 'create']); // Proteksi Create
         Karyawan::create($request->validated());
         return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil ditambahkan.');
     }
 
     public function update(UpdateKaryawanRequest $request, Karyawan $karyawan)
     {
+        $this->authorize('access', ['karyawans', 'update']); // Proteksi Update
         $karyawan->update($request->validated());
         return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui.');
     }
 
     public function destroy(Karyawan $karyawan)
     {
+        $this->authorize('access', ['karyawans', 'delete']); // Proteksi Delete
         $karyawan->delete();
         return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil dihapus.');
     }

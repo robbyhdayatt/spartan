@@ -41,7 +41,7 @@ class StockAdjustmentController extends Controller
     public function store(StoreStockAdjustmentRequest $request)
     {
         $this->authorize('access', ['adjustment', 'create']);
-        
+      
         DB::beginTransaction();
         try {
             // Method store sekarang hanya membuat dokumen DRAFT, TIDAK mengubah stok
@@ -53,8 +53,30 @@ class StockAdjustmentController extends Controller
                 'status_adjustment' => 'draft', // <-- STATUS AWAL DIUBAH MENJADI DRAFT
                 'keterangan' => $request->keterangan,
                 'created_by' => auth()->id(),
-            ]);
 
+        foreach ($request->details as $item) {
+            $part = Part::find($item['id_part']);
+            $stokLokasi = StokLokasi::firstOrCreate(
+                ['id_part' => $item['id_part'], 'id_gudang' => $request->id_gudang],
+                ['quantity' => 0]
+            );
+            $adj->details()->create([
+                'id_part' => $item['id_part'],
+                'stok_sistem' => $stokLokasi->quantity,
+                'stok_fisik' => $item['stok_fisik'],
+                'harga_satuan' => $part->harga_pokok ?? 0,
+            ]);
+        }
+        return redirect()->route('adjustment.index')->with('success', 'Dokumen adjustment berhasil dibuat & menunggu diajukan.');
+    }
+
+    public function submitApproval(StockAdjustment $adjustment)
+    {
+        $this->authorize('access', ['adjustment', 'update']);
+        $adjustment->status_adjustment = 'pending_approval';
+        $adjustment->save();
+        return redirect()->route('adjustment.index')->with('success', 'Adjustment berhasil diajukan untuk persetujuan.');
+    }
             foreach ($request->details as $item) {
                 $part = Part::find($item['id_part']);
                 $stokLokasi = StokLokasi::firstOrCreate(
@@ -130,7 +152,7 @@ class StockAdjustmentController extends Controller
         $adjustment->id_jabatan_required = $rule ? $rule->id_jabatan_required : null;
         return response()->json($adjustment);
     }
-    
+
     public function getStockSistem(Request $request)
     {
         $this->authorize('access', ['adjustment', 'read']);
@@ -144,6 +166,16 @@ class StockAdjustmentController extends Controller
         $totalStok = StokLokasi::where('id_part', $partId)->sum('quantity');
         $totalStokRusak = StokLokasi::where('id_part', $partId)->sum('quantity_rusak');
         $totalStokKarantina = StokLokasi::where('id_part', $partId)->sum('quantity_quarantine');
-        StokSummary::updateOrCreate(['id_part' => $partId], ['stok_tersedia' => $totalStok, 'stok_rusak' => $totalStokRusak, 'stok_quarantine' => $totalStokKarantina, 'stok_total' => $totalStok + $totalStokRusak + $totalStokKarantina, 'last_updated' => now()]);
+
+        StokSummary::updateOrCreate(
+            ['id_part' => $partId],
+            [
+                'stok_tersedia' => $totalStok,
+                'stok_rusak' => $totalStokRusak,
+                'stok_quarantine' => $totalStokKarantina,
+                'stok_total' => $totalStok + $totalStokRusak + $totalStokKarantina,
+                'last_updated' => now()
+            ]
+        );
     }
 }

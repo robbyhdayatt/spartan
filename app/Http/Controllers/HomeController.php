@@ -12,6 +12,7 @@ class HomeController extends Controller
 {
     public function __construct()
     {
+        // Memastikan hanya user yang sudah login yang bisa mengakses controller ini
         $this->middleware('auth');
     }
 

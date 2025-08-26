@@ -23,11 +23,10 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-
-        // PINDAHKAN KE SINI: Pengecekan admin harus selalu yang pertama
+      
         // Gate ini akan menangkap semua permintaan hak akses
         Gate::before(function (User $user) {
-            // Jika user adalah admin, selalu izinkan semuanya dan hentikan pengecekan lebih lanjut
+            // Jika user adalah admin, selalu izinkan semuanya
             if ($user->role_level === 'admin') {
                 return true;
             }
@@ -38,7 +37,6 @@ class AuthServiceProvider extends ServiceProvider
             if (!$user->karyawan) {
                 return false;
             }
-
             $permission = $user->permissions()
                               ->where('module_name', $module)
                               ->first();

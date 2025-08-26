@@ -38,5 +38,16 @@ class ApprovalLevelSeeder extends Seeder
                 'status_aktif' => 1,
             ]);
         }
+        // Aturan untuk Stock Adjustment, disetujui oleh Supervisor
+        if ($supervisorJabatan) {
+            ApprovalLevel::create([
+                'jenis_dokumen' => 'adjustment',
+                'nama_level' => 'Persetujuan Supervisor Gudang',
+                'id_jabatan_required' => $supervisorJabatan->id_jabatan,
+                'level_sequence' => 1,
+                'minimum_amount' => 0, // Berlaku untuk semua nominal
+                'status_aktif' => 1,
+            ]);
+        }
     }
 }

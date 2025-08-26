@@ -153,7 +153,6 @@
                     @can('access', ['settings.campaign', 'read'])
                     <li class="nav-item"><a href="{{ route('campaign.index') }}" class="nav-link {{ request()->is('settings/campaign*') ? 'active' : '' }}"><i class="nav-icon fas fa-bullhorn"></i><p>Manajemen Kampanye</p></a></li>
                     @endcan
-
                     @endif
                 @endauth
             </ul>

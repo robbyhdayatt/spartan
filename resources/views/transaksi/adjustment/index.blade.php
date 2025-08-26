@@ -116,7 +116,6 @@ $(document).ready(function() {
         $('#details-container').append(template);
         detailIndex++;
     });
-
     $(document).on('click', '.btn-remove-detail', function() { $(this).closest('tr').remove(); });
     $(document).on('change', '#select_gudang', function() { $('#details-container').empty(); detailIndex = 0; });
     $(document).on('change', '.select-part', function() {

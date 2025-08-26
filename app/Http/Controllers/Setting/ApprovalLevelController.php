@@ -15,6 +15,7 @@ class ApprovalLevelController extends Controller
      */
     public function index()
     {
+        $this->authorize('access', ['approval-levels', 'read']);
         $approvalLevels = ApprovalLevel::with('jabatan')->latest()->paginate(10);
         $jabatans = Jabatan::where('status_aktif', 1)->get(); // Data untuk dropdown di modal
 
@@ -26,6 +27,7 @@ class ApprovalLevelController extends Controller
      */
     public function store(StoreApprovalLevelRequest $request)
     {
+        $this->authorize('access', ['approval-levels', 'create']);
         ApprovalLevel::create($request->validated());
         return redirect()->route('approval-levels.index')->with('success', 'Aturan approval berhasil ditambahkan.');
     }
@@ -35,6 +37,7 @@ class ApprovalLevelController extends Controller
      */
     public function update(UpdateApprovalLevelRequest $request, ApprovalLevel $approvalLevel)
     {
+        $this->authorize('access', ['approval-levels', 'update']);
         $approvalLevel->update($request->validated());
         return redirect()->route('approval-levels.index')->with('success', 'Aturan approval berhasil diperbarui.');
     }
@@ -44,9 +47,8 @@ class ApprovalLevelController extends Controller
      */
     public function destroy(ApprovalLevel $approvalLevel)
     {
+        $this->authorize('access', ['approval-levels', 'delete']);
         $approvalLevel->delete();
         return redirect()->route('approval-levels.index')->with('success', 'Aturan approval berhasil dihapus.');
     }
-
-    // Method create(), show(), dan edit() tidak kita gunakan karena sudah memakai modal.
 }

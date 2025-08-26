@@ -170,7 +170,8 @@ class PenerimaanController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-        private function _updateStockSummary(int $partId)
+
+    private function _updateStockSummary(int $partId)
     {
         // Hitung total dari semua gudang untuk part ini
         $totalStok = StokLokasi::where('id_part', $partId)->sum('quantity');

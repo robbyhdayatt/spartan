@@ -19,11 +19,16 @@
                         <td class="text-capitalize">{{ $user->role_level }}</td>
                         <td>{!! $user->status_aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Tidak Aktif</span>' !!}</td>
                         <td>
+                            @can('manage-master-data')
                             <a href="#" class="btn btn-warning btn-sm btn-edit" data-id="{{ $user->id_user }}" data-username="{{ $user->username }}" data-role_level="{{ $user->role_level }}">Edit</a>
+                            @endcan
+                            
+                            @can('delete-data')
                             <form action="{{ route('users.destroy', $user->id_user) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus user ini?');">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                             </form>
+                            @endcan
                         </td>
                     </tr>
                     @empty

@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting\ApprovalLevel;
 use App\Models\Transaksi\Pembelian;
-use App\Models\Transaksi\StockAdjustment; // <-- Pastikan ini ada
+use App\Models\Transaksi\StockAdjustment;
 use Illuminate\Http\Request;
 
 class ApprovalController extends Controller
 {
     public function index()
     {
+        $this->authorize('access', ['approvals', 'read']);
         $user = auth()->user();
         $pendingApprovals = collect();
 
@@ -19,8 +20,6 @@ class ApprovalController extends Controller
         }
 
         $userJabatanId = $user->karyawan->id_jabatan;
-
-        // --- LOGIKA UNTUK PURCHASE ORDER (PO) ---
         $allPendingPO = Pembelian::with('supplier')
                           ->where('status_pembelian', 'pending_approval')
                           ->get();
@@ -32,7 +31,6 @@ class ApprovalController extends Controller
                                         ->first();
 
             if ($correctRule && $correctRule->id_jabatan_required == $userJabatanId) {
-                // Menyeragamkan properti untuk ditampilkan di view
                 $po->document_type = 'Purchase Order';
                 $po->detail_url = route('pembelian.index');
                 $po->nomor_dokumen = $po->nomor_po;
@@ -41,10 +39,15 @@ class ApprovalController extends Controller
                 $pendingApprovals->push($po);
             }
         }
+        $allPendingAdjustment = StockAdjustment::with('gudang')
+                                    ->where('status_adjustment', 'pending_approval')
+                                    ->get();
+        
+        foreach ($allPendingAdjustment as $adj) {
+            // Untuk setiap adjustment, cari aturan yang paling pas
+            // Saat ini kita belum pakai nominal, jadi langsung ambil aturan 'adjustment'
+            $correctRule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
 
-        // =======================================================
-        // === LOGIKA BARU UNTUK STOCK ADJUSTMENT ===
-        // =======================================================
         $allPendingAdjustment = StockAdjustment::with('gudang')
                                     ->where('status_adjustment', 'pending_approval')
                                     ->get();
@@ -56,11 +59,12 @@ class ApprovalController extends Controller
             // Jika aturan ditemukan dan jabatan user sesuai, tambahkan ke daftar
             if ($correctRule && $correctRule->id_jabatan_required == $userJabatanId) {
                 // Menyeragamkan properti untuk ditampilkan di view
+
                 $adj->document_type = 'Stock Adjustment';
                 $adj->detail_url = route('adjustment.index');
                 $adj->nomor_dokumen = $adj->nomor_adjustment;
                 $adj->tanggal_dokumen = $adj->tanggal_adjustment;
-                $adj->nilai_dokumen = $adj->total_selisih_value;
+                $adj->nilai_dokumen = $adj->total_selisih_value; // Asumsi nilai dari selisih
                 $pendingApprovals->push($adj);
             }
         }

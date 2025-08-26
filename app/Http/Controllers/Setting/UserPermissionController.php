@@ -8,10 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
+
 class UserPermissionController extends Controller
 {
-    // Daftar semua modul yang ingin kita atur hak aksesnya
-    // Pastikan nama modul ini sama dengan yang Anda gunakan di Gate
     private $modules = [
         'dashboard',
         'approvals',
@@ -35,7 +34,6 @@ class UserPermissionController extends Controller
         $permissions = [];
         foreach ($users as $user) {
             foreach ($this->modules as $module) {
-                // Cari izin yang sudah ada untuk user & modul ini
                 $permissions[$user->id_user][$module] = $user->permissions->where('module_name', $module)->first();
             }
         }

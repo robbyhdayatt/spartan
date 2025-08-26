@@ -8,7 +8,9 @@
                 <div class="card-header">
                     <h3 class="card-title">Data Brand</h3>
                     <div class="card-tools">
+                        @can('manage-master-data')
                         <a href="#" id="btn-create-brand" class="btn btn-primary btn-sm">Tambah Data</a>
+                        @endcan
                     </div>
                 </div>
                 <div class="card-body">
@@ -39,6 +41,7 @@
                                 <td>{{ $brand->negara_asal }}</td>
                                 <td>{!! $brand->status_aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Tidak Aktif</span>' !!}</td>
                                 <td>
+                                    @can('manage-master-data')
                                     <a href="#"
                                        class="btn btn-warning btn-sm btn-edit-brand"
                                        data-id="{{ $brand->id_brand }}"
@@ -47,11 +50,15 @@
                                        data-status_aktif="{{ $brand->status_aktif }}">
                                        Edit
                                     </a>
+                                    @endcan
+
+                                    @can('delete-data')
                                     <form action="{{ route('brands.destroy', $brand->id_brand) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                             @empty
