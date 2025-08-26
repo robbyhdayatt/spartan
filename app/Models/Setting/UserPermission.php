@@ -11,7 +11,6 @@ class UserPermission extends Model
     protected $table = 'user_permission';
     protected $primaryKey = 'id_permission';
     public $timestamps = false;
-
     protected $fillable = [
         'id_user',
         'module_name',

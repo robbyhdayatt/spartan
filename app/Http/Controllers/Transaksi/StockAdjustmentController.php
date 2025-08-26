@@ -15,6 +15,7 @@ use App\Models\Transaksi\StockAdjustment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class StockAdjustmentController extends Controller
 {
@@ -40,16 +41,18 @@ class StockAdjustmentController extends Controller
     public function store(StoreStockAdjustmentRequest $request)
     {
         $this->authorize('access', ['adjustment', 'create']);
-        // Method store sekarang hanya membuat dokumen DRAFT, tidak mengubah stok
-        $adj = StockAdjustment::create([
-            'nomor_adjustment' => 'ADJ-' . date('Ymd') . '-' . Str::random(4),
-            'id_gudang' => $request->id_gudang,
-            'tanggal_adjustment' => $request->tanggal_adjustment,
-            'jenis_adjustment' => $request->jenis_adjustment,
-            'status_adjustment' => 'draft', // Status Awal
-            'keterangan' => $request->keterangan,
-            'created_by' => auth()->id(),
-        ]);
+      
+        DB::beginTransaction();
+        try {
+            // Method store sekarang hanya membuat dokumen DRAFT, TIDAK mengubah stok
+            $adj = StockAdjustment::create([
+                'nomor_adjustment' => 'ADJ-' . date('Ymd') . '-' . Str::random(4),
+                'id_gudang' => $request->id_gudang,
+                'tanggal_adjustment' => $request->tanggal_adjustment,
+                'jenis_adjustment' => $request->jenis_adjustment,
+                'status_adjustment' => 'draft', // <-- STATUS AWAL DIUBAH MENJADI DRAFT
+                'keterangan' => $request->keterangan,
+                'created_by' => auth()->id(),
 
         foreach ($request->details as $item) {
             $part = Part::find($item['id_part']);
@@ -74,11 +77,39 @@ class StockAdjustmentController extends Controller
         $adjustment->save();
         return redirect()->route('adjustment.index')->with('success', 'Adjustment berhasil diajukan untuk persetujuan.');
     }
+            foreach ($request->details as $item) {
+                $part = Part::find($item['id_part']);
+                $stokLokasi = StokLokasi::firstOrCreate(
+                    ['id_part' => $item['id_part'], 'id_gudang' => $request->id_gudang],
+                    ['quantity' => 0]
+                );
+                $adj->details()->create([
+                    'id_part' => $item['id_part'],
+                    'stok_sistem' => $stokLokasi->quantity,
+                    'stok_fisik' => $item['stok_fisik'],
+                    'harga_satuan' => $part->harga_pokok ?? 0,
+                ]);
+            }
+            DB::commit();
+            return redirect()->route('adjustment.index')->with('success', 'Dokumen adjustment berhasil dibuat & menunggu diajukan.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function submitApproval(StockAdjustment $adjustment)
+    {
+        $this->authorize('access', ['adjustment', 'update']);
+        $adjustment->status_adjustment = 'pending_approval';
+        $adjustment->save();
+        return redirect()->route('adjustment.index')->with('success', 'Adjustment berhasil diajukan untuk persetujuan.');
+    }
 
     public function approve(StockAdjustment $adjustment)
     {
         $this->authorize('access', ['adjustment', 'update']);
-        // Cek otorisasi
         $rule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
         if (!$rule || auth()->user()->karyawan->id_jabatan != $rule->id_jabatan_required) {
             return redirect()->back()->with('error', 'Anda tidak berhak menyetujui dokumen ini.');
@@ -86,11 +117,11 @@ class StockAdjustmentController extends Controller
 
         DB::beginTransaction();
         try {
-            // LAKUKAN PERUBAHAN STOK DI SINI
+            // LOGIKA PERUBAHAN STOK DIPINDAHKAN KE SINI
             foreach($adjustment->details as $detail) {
                 $selisih = $detail->stok_fisik - $detail->stok_sistem;
                 $stokLokasi = StokLokasi::where('id_part', $detail->id_part)->where('id_gudang', $adjustment->id_gudang)->first();
-                $stokLokasi->quantity = $detail->stok_fisik; // Langsung set ke stok fisik
+                $stokLokasi->quantity = $detail->stok_fisik;
                 $stokLokasi->save();
                 
                 $this->_updateStockSummary($detail->id_part);
@@ -102,7 +133,6 @@ class StockAdjustmentController extends Controller
             $adjustment->approved_by = auth()->id();
             $adjustment->save();
 
-            // Catat di history
             ApprovalHistory::create(['jenis_dokumen' => 'adjustment', 'id_dokumen' => $adjustment->id_adjustment, 'id_approver' => auth()->id(), 'status_approval' => 'approved', 'keterangan' => 'Disetujui', 'tanggal_approval' => now()]);
             
             DB::commit();
@@ -113,8 +143,7 @@ class StockAdjustmentController extends Controller
             return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
         }
     }
-    
-    // Endpoint untuk AJAX
+
     public function getDetailsJson(StockAdjustment $adjustment)
     {
         $this->authorize('access', ['adjustment', 'read']);
@@ -128,14 +157,10 @@ class StockAdjustmentController extends Controller
     {
         $this->authorize('access', ['adjustment', 'read']);
         $request->validate(['part_id' => 'required|integer', 'gudang_id' => 'required|integer']);
-        $stok = StokLokasi::where('id_part', $request->part_id)
-                          ->where('id_gudang', $request->gudang_id)
-                          ->first();
-
+        $stok = StokLokasi::where('id_part', $request->part_id)->where('id_gudang', $request->gudang_id)->first();
         return response()->json(['stok' => $stok->quantity ?? 0]);
     }
-    
-    // KODE INI SUDAH BENAR DAN TIDAK PERLU DIUBAH
+
     private function _updateStockSummary(int $partId)
     {
         $totalStok = StokLokasi::where('id_part', $partId)->sum('quantity');

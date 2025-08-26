@@ -10,7 +10,6 @@ class AuthServiceProvider extends ServiceProvider
 {
     /**
      * The policy mappings for the application.
-     *
      * @var array
      */
     protected $policies = [
@@ -19,13 +18,12 @@ class AuthServiceProvider extends ServiceProvider
 
     /**
      * Register any authentication / authorization services.
-     *
      * @return void
      */
     public function boot()
     {
         $this->registerPolicies();
-
+      
         // Gate ini akan menangkap semua permintaan hak akses
         Gate::before(function (User $user) {
             // Jika user adalah admin, selalu izinkan semuanya
@@ -34,8 +32,11 @@ class AuthServiceProvider extends ServiceProvider
             }
         });
 
-        // Gate dinamis yang memeriksa izin dari database
+        // Gate dinamis yang memeriksa izin dari database untuk peran lain
         Gate::define('access', function (User $user, $module, $action) {
+            if (!$user->karyawan) {
+                return false;
+            }
             $permission = $user->permissions()
                               ->where('module_name', $module)
                               ->first();

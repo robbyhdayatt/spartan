@@ -20,7 +20,6 @@ class ApprovalController extends Controller
         }
 
         $userJabatanId = $user->karyawan->id_jabatan;
-
         $allPendingPO = Pembelian::with('supplier')
                           ->where('status_pembelian', 'pending_approval')
                           ->get();
@@ -32,13 +31,11 @@ class ApprovalController extends Controller
                                         ->first();
 
             if ($correctRule && $correctRule->id_jabatan_required == $userJabatanId) {
-                // Tambahkan properti standar agar seragam di view
                 $po->document_type = 'Purchase Order';
                 $po->detail_url = route('pembelian.index');
                 $po->nomor_dokumen = $po->nomor_po;
                 $po->tanggal_dokumen = $po->tanggal_pembelian;
                 $po->nilai_dokumen = $po->total_amount;
-                
                 $pendingApprovals->push($po);
             }
         }
@@ -51,14 +48,23 @@ class ApprovalController extends Controller
             // Saat ini kita belum pakai nominal, jadi langsung ambil aturan 'adjustment'
             $correctRule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
 
+        $allPendingAdjustment = StockAdjustment::with('gudang')
+                                    ->where('status_adjustment', 'pending_approval')
+                                    ->get();
+        
+        foreach ($allPendingAdjustment as $adj) {
+            // Cari aturan untuk adjustment
+            $correctRule = ApprovalLevel::where('jenis_dokumen', 'adjustment')->first();
+
+            // Jika aturan ditemukan dan jabatan user sesuai, tambahkan ke daftar
             if ($correctRule && $correctRule->id_jabatan_required == $userJabatanId) {
-                // Tambahkan properti standar agar seragam di view
+                // Menyeragamkan properti untuk ditampilkan di view
+
                 $adj->document_type = 'Stock Adjustment';
                 $adj->detail_url = route('adjustment.index');
                 $adj->nomor_dokumen = $adj->nomor_adjustment;
                 $adj->tanggal_dokumen = $adj->tanggal_adjustment;
                 $adj->nilai_dokumen = $adj->total_selisih_value; // Asumsi nilai dari selisih
-
                 $pendingApprovals->push($adj);
             }
         }

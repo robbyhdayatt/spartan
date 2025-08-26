@@ -16,9 +16,12 @@ class JabatanSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $jabatans = [
+            // Level Eksekutif
+            ['nama_jabatan' => 'Chief Executive Officer (CEO)', 'level_jabatan' => 0],
             // Level Managerial (Pusat)
             ['nama_jabatan' => 'Business Sparepart Manager', 'level_jabatan' => 1],
             ['nama_jabatan' => 'Service & Part Manager', 'level_jabatan' => 1],
+            ['nama_jabatan' => 'Finance Manager', 'level_jabatan' => 1],
             // Level Supervisor (Pusat)
             ['nama_jabatan' => 'Inventory Supervisor', 'level_jabatan' => 2],
             ['nama_jabatan' => 'IT Supervisor', 'level_jabatan' => 2],

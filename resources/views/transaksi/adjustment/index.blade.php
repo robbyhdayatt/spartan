@@ -6,7 +6,9 @@
         <div class="card-header">
             <h3 class="card-title">Data Stock Adjustment</h3>
             <div class="card-tools">
-                <a href="#" id="btn-create-adjustment" class="btn btn-primary btn-sm">Buat Adjustment Baru</a>
+                @can('access', ['adjustment', 'create'])
+                    <a href="#" id="btn-create-adjustment" class="btn btn-primary btn-sm">Buat Adjustment Baru</a>
+                @endcan
             </div>
         </div>
         <div class="card-body">
@@ -24,7 +26,7 @@
                         <td>{{ \Carbon\Carbon::parse($adj->tanggal_adjustment)->format('d-m-Y') }}</td>
                         <td class="text-capitalize">{{ $adj->jenis_adjustment }}</td>
                         <td>
-                            @php
+                             @php
                                 $statusClass = ['draft'=>'secondary', 'pending_approval'=>'warning', 'completed'=>'success', 'cancelled'=>'danger', 'rejected'=>'danger'][$adj->status_adjustment] ?? 'light';
                             @endphp
                             <span class="badge badge-{{ $statusClass }} text-capitalize">{{ str_replace('_', ' ', $adj->status_adjustment) }}</span>
@@ -51,7 +53,7 @@
 
 <div class="modal fade" id="createModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
 <div class="modal-header"><h5 class="modal-title">Form Stock Adjustment</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
-<form action="{{ route('adjustment.store') }}" method="POST"> @csrf
+<form id="createAdjustmentForm" action="{{ route('adjustment.store') }}" method="POST"> @csrf
 <div class="modal-body">
     <div class="row">
         <div class="col-md-4"><div class="form-group"><label>Gudang</label><select name="id_gudang" id="select_gudang" class="form-control" required><option value="">-- Pilih Gudang --</option>@foreach($gudangs as $g)<option value="{{ $g->id_gudang }}">{{ $g->nama_gudang }}</option>@endforeach</select></div></div>
@@ -60,7 +62,7 @@
     </div>
     <div class="form-group"><label for="keterangan">Keterangan</label><textarea name="keterangan" id="keterangan" rows="2" class="form-control"></textarea></div>
     <hr><h6>Detail Barang</h6>
-    <table class="table table-bordered"><thead><tr><th style="width:40%">Part</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Aksi</th></tr></thead><tbody id="details-container"></tbody></table>
+    <table class="table table-bordered table-sm"><thead><tr><th style="width:40%">Part</th><th>Stok Sistem</th><th>Stok Fisik</th><th>Selisih</th><th>Aksi</th></tr></thead><tbody id="details-container"></tbody></table>
     <button type="button" id="btn-add-detail" class="btn btn-success mt-2">Tambah Part</button>
 </div>
 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Adjustment</button></div>
@@ -72,12 +74,21 @@
 <div class="modal-footer">
     <div id="approval-actions-adj" style="display: none;" class="mr-auto">
         <form id="approveFormAdj" action="" method="POST" class="d-inline"> @csrf <button type="submit" class="btn btn-success">Approve</button></form>
-        {{-- Tombol reject bisa ditambahkan di sini jika diperlukan --}}
     </div>
     <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
 </div>
 </div></div></div>
 
+<div class="modal fade" id="rejectModalAdj" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Alasan Penolakan</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+<form id="rejectFormAdj" action="" method="POST">
+    @csrf
+    <div class="modal-body">
+        <div class="form-group"><label for="keterangan_reject">Mohon berikan alasan penolakan:</label><textarea name="keterangan" id="keterangan_reject" rows="3" class="form-control" required></textarea></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="submit" class="btn btn-danger">Tolak Dokumen</button></div>
+</form>
+</div></div></div>
 
 <template id="detail-row-template">
     <tr>
@@ -97,7 +108,7 @@ $(document).ready(function() {
 
     // === LOGIC UNTUK MODAL CREATE ===
     $('#btn-create-adjustment').on('click', function(e) { e.preventDefault(); $('#createModal').modal('show'); });
-    $('#createModal').on('hidden.bs.modal', function () { $('#details-container').empty(); detailIndex = 0; $('#select_gudang').val(''); });
+    $('#createModal').on('hidden.bs.modal', function () { $('#details-container').empty(); detailIndex = 0; $('#createAdjustmentForm')[0].reset(); });
     $('#btn-add-detail').on('click', function() {
         let gudangId = $('#select_gudang').val();
         if (!gudangId) { alert('Harap pilih gudang terlebih dahulu!'); return; }
@@ -106,10 +117,8 @@ $(document).ready(function() {
         detailIndex++;
     });
     $(document).on('click', '.btn-remove-detail', function() { $(this).closest('tr').remove(); });
-    $(document).on('change', '.select-part, #select_gudang', function() {
-        $('#details-container').find('.select-part').trigger('updateStock');
-    });
-    $(document).on('updateStock', '.select-part', function() {
+    $(document).on('change', '#select_gudang', function() { $('#details-container').empty(); detailIndex = 0; });
+    $(document).on('change', '.select-part', function() {
         let row = $(this).closest('tr');
         let partId = $(this).val();
         let gudangId = $('#select_gudang').val();
@@ -171,6 +180,10 @@ $(document).ready(function() {
             }
         });
     });
+
+    @if ($errors->any())
+        $('#createModal').modal('show');
+    @endif
 });
 </script>
 @endpush

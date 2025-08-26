@@ -13,6 +13,8 @@ use App\Models\Transaksi\Penjualan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Master\StokSummary;
+use Illuminate\Http\Request; 
+use App\Models\Setting\HargaJual;
 
 class PenjualanController extends Controller
 {
@@ -34,10 +36,8 @@ class PenjualanController extends Controller
         $this->authorize('access', ['penjualan', 'create']);
         DB::beginTransaction();
         try {
-            // Asumsi penjualan dilakukan dari gudang utama (ID 1), sesuaikan jika perlu
-            $gudangId = 1; 
+            $gudangId = 1;
 
-            // 1. Validasi Stok
             foreach ($request->details as $detail) {
                 $stok = StokLokasi::where('id_part', $detail['id_part'])->where('id_gudang', $gudangId)->first();
                 if (!$stok || $stok->quantity < $detail['quantity']) {
@@ -46,7 +46,6 @@ class PenjualanController extends Controller
                 }
             }
 
-            // 2. Hitung Total
             $subtotal = 0;
             foreach ($request->details as $detail) {
                 $subtotal += $detail['quantity'] * $detail['harga_satuan'];
@@ -54,14 +53,13 @@ class PenjualanController extends Controller
             $ppnAmount = $subtotal * 0.11;
             $totalAmount = $subtotal + $ppnAmount;
 
-            // 3. Simpan Header Penjualan
             $penjualan = Penjualan::create([
                 'nomor_invoice' => 'INV-' . date('Ymd') . '-' . Str::random(4),
                 'id_konsumen' => $request->id_konsumen,
                 'id_sales' => $request->id_sales,
                 'tanggal_penjualan' => $request->tanggal_penjualan,
                 'jenis_penjualan' => $request->jenis_penjualan,
-                'status_penjualan' => 'processed', // Anggap langsung diproses
+                'status_penjualan' => 'processed',
                 'status_pembayaran' => 'unpaid',
                 'subtotal' => $subtotal,
                 'ppn_amount' => $ppnAmount,
@@ -69,40 +67,26 @@ class PenjualanController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            // 4. Simpan Detail & Kurangi Stok
             foreach ($request->details as $detail) {
-                // Hitung subtotal untuk baris ini
-                $subtotal_detail = $detail['quantity'] * $detail['harga_satuan'];
+                // PERBAIKAN TYPO ADA DI SINI
+                $subtotal_detail = $detail['quantity'] * $detail['harga_satuan']; 
 
-                // Simpan detail, gabungkan data dari form dengan subtotal yang dihitung
                 $penjualan->details()->create(array_merge($detail, [
                     'subtotal' => $subtotal_detail,
-                    'total_after_diskon' => $subtotal_detail // Asumsi belum ada diskon
+                    'total_after_diskon' => $subtotal_detail
                 ]));
-
-                // Kurangi Stok Lokasi
+                
                 $stokLokasi = StokLokasi::where('id_part', $detail['id_part'])->where('id_gudang', $gudangId)->first();
                 $stokLokasi->quantity -= $detail['quantity'];
                 $stokLokasi->save();
 
                 $this->_updateStockSummary($detail['id_part']);
 
-                // Catat di Kartu Stok
-                KartuStok::create([
-                    'id_part' => $detail['id_part'],
-                    'id_gudang' => $gudangId,
-                    'jenis_transaksi' => 'penjualan',
-                    'referensi_dokumen' => $penjualan->nomor_invoice,
-                    'referensi_id' => $penjualan->id_penjualan,
-                    'keluar' => $detail['quantity'],
-                    'kondisi_stok' => 'baik',
-                    'created_by' => auth()->id(),
-                ]);
+                KartuStok::create(['id_part' => $detail['id_part'], 'id_gudang' => $gudangId, 'jenis_transaksi' => 'penjualan', 'referensi_dokumen' => $penjualan->nomor_invoice, 'referensi_id' => $penjualan->id_penjualan, 'keluar' => $detail['quantity'], 'kondisi_stok' => 'baik', 'created_by' => auth()->id()]);
             }
 
             DB::commit();
             return redirect()->route('penjualan.index')->with('success', 'Data penjualan berhasil disimpan.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menyimpan penjualan: ' . $e->getMessage())->withInput();
@@ -114,6 +98,64 @@ class PenjualanController extends Controller
         $this->authorize('access', ['penjualan', 'read']);
         $penjualan->load(['konsumen', 'sales', 'details.part']);
         return response()->json($penjualan);
+    }
+    
+    public function getHargaPart(Request $request)
+    {
+        $request->validate([
+            'part_id' => 'required|integer|exists:part,id_part',
+            'konsumen_id' => 'required|integer|exists:konsumen,id_konsumen'
+        ]);
+
+        $partId = $request->part_id;
+        $konsumenId = $request->konsumen_id;
+
+        // 1. Cari harga spesifik untuk konsumen & part ini
+        $hargaSpesifik = HargaJual::where('id_part', $partId)
+                                  ->where('id_konsumen', $konsumenId)
+                                  ->where('status_aktif', 1)
+                                  ->first();
+
+        if ($hargaSpesifik) {
+            return response()->json(['harga' => $hargaSpesifik->hed]);
+        }
+
+        // 2. Jika tidak ada, cari harga umum untuk part ini (tanpa konsumen spesifik)
+        $hargaUmum = HargaJual::where('id_part', $partId)
+                              ->whereNull('id_konsumen')
+                              ->where('status_aktif', 1)
+                              ->first();
+
+        if ($hargaUmum) {
+            return response()->json(['harga' => $hargaUmum->hed]);
+        }
+
+        // 3. Jika tidak ada harga yang diatur sama sekali, kembalikan harga pokok
+        $part = \App\Models\Master\Part::find($partId);
+        return response()->json(['harga' => $part->harga_pokok ?? 0]);
+    }
+
+    public function markAsDelivered(Penjualan $penjualan)
+    {
+        $this->authorize('access', ['penjualan', 'update']);
+        if ($penjualan->status_penjualan == 'processed') {
+            $penjualan->status_penjualan = 'delivered';
+            $penjualan->save();
+            return redirect()->back()->with('success', 'Status penjualan berhasil diubah menjadi Terkirim.');
+        }
+        return redirect()->back()->with('error', 'Hanya penjualan berstatus Processed yang bisa diubah menjadi Terkirim.');
+    }
+
+    public function markAsCompleted(Penjualan $penjualan)
+    {
+        $this->authorize('access', ['penjualan', 'update']);
+        if (in_array($penjualan->status_penjualan, ['processed', 'delivered'])) {
+            $penjualan->status_penjualan = 'completed';
+            $penjualan->status_pembayaran = 'paid'; // Asumsi lunas saat completed
+            $penjualan->save();
+            return redirect()->back()->with('success', 'Status penjualan berhasil diubah menjadi Selesai.');
+        }
+        return redirect()->back()->with('error', 'Hanya penjualan berstatus Processed atau Delivered yang bisa diselesaikan.');
     }
     private function _updateStockSummary(int $partId)
     {

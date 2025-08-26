@@ -7,6 +7,6 @@ class KonsumenSeeder extends Seeder
 {
     public function run()
     {
-        Konsumen::factory(25)->create(); // Membuat 25 data Konsumen
+        Konsumen::factory(5)->create(); // Membuat 5 data Konsumen
     }
 }

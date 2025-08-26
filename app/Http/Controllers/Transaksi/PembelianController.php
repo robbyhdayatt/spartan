@@ -12,6 +12,7 @@ use App\Models\Transaksi\Pembelian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class PembelianController extends Controller
 {
@@ -112,33 +113,6 @@ class PembelianController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('pembelian.index')->with('error', 'Gagal menyetujui PO: ' . $e->getMessage());
-        }
-    }
-
-    public function reject(Request $request, Pembelian $pembelian)
-    {
-        $this->authorize('access', ['pembelian', 'update']);
-        $request->validate(['keterangan' => 'required|string|max:255']);
-        $correctRule = $this->getApprovalRule($pembelian);
-        $userJabatanId = auth()->user()->karyawan->id_jabatan;
-
-        if (!$correctRule || $userJabatanId != $correctRule->id_jabatan_required || $pembelian->status_pembelian !== 'pending_approval') {
-            return redirect()->route('pembelian.index')->with('error', 'Anda tidak memiliki hak untuk menolak dokumen ini.');
-        }
-        
-        DB::beginTransaction();
-        try {
-            $pembelian->status_pembelian = 'rejected';
-            $pembelian->status_approval = 'rejected';
-            $pembelian->save();
-            
-            ApprovalHistory::create(['jenis_dokumen' => 'pembelian', 'id_dokumen' => $pembelian->id_pembelian, 'id_approver' => auth()->id(), 'status_approval' => 'rejected', 'keterangan' => $request->keterangan, 'tanggal_approval' => now()]);
-            DB::commit();
-            return redirect()->route('pembelian.index')->with('success', 'PO berhasil ditolak.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->route('pembelian.index')->with('error', 'Gagal menolak PO: ' . $e->getMessage());
         }
     }
 
